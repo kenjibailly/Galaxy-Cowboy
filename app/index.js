@@ -1,5 +1,5 @@
 const Discord = require("discord.js");
-const config = require("./botconfig.json");
+const config = process.env;
 const Poll = require("./poll.js");
 const Weekly = require("./weekly.js");
 const Datastore = require('nedb');

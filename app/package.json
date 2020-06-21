@@ -1,5 +1,5 @@
 {
-  "name": "votabot",
+  "name": "galaxy-cowboy",
   "version": "1.0.0",
   "description": "A discord bot that create interactive polls",
   "main": "index.js",
@@ -7,7 +7,12 @@
     "test": "echo \"Error: no test specified\" && exit 1",
     "start": "node index.js"
   },
-  "author": "Zheoni",
+  "repository": {
+    "type": "git",
+    "url": "https://github.com/kenjibailly/Galaxy-Cowboy.git"
+  },
+  "keywords": [],
+  "author": "Zep",
   "license": "ISC",
   "dependencies": {
     "dateformat": "^3.0.3",
