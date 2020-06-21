@@ -4,7 +4,7 @@ const Poll = require("./poll.js");
 const Weekly = require("./weekly.js");
 const Datastore = require('nedb');
 
-var server_port = process.env.PORT || 80;
+var server_port = 80;
 var server_host = '0.0.0.0';
 var server = server.listen(server_port, server_host, function() {
     console.log('Listening on port %d', server_port);
