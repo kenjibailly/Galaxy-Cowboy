@@ -380,4 +380,4 @@ client.on("message", async (msg) => {
 
 client.on("error", console.error);
 
-client.login(config.token).then((token) => console.log("Logged in successfully")).catch(console.error);
+client.login(config.TOKEN).then((token) => console.log("Logged in successfully")).catch(console.error);
