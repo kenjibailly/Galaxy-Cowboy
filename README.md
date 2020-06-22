@@ -1,4 +1,4 @@
-# ✅ Galaxy Cowboy
+# Galaxy Cowboy
 
 A discord bot to create interactive simple polls easily.
 
