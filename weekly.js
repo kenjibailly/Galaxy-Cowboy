@@ -17,7 +17,7 @@ let dateTextLines = [];
 let position;
 
 class Weekly {
-	constructor(msg, question, startDate, endDate, weeklyDescription, answers, time, type) {
+	constructor(msg, question, startDate, endDate, weeklyDescription, weeklyType, answers, time, type) {
 		if (msg) { // if the constructor have parameters
 			this.guildId = msg.guild.id;
 			this.channelId = msg.channel.id;
@@ -26,6 +26,7 @@ class Weekly {
 			this.startDate = startDate;
 			this.endDate = endDate;
 			this.weeklyDescription = weeklyDescription;
+			this.weeklyType = weeklyType;
 			this.answers = answers;
 			this.createdOn = Date.now();
 			this.isTimed = (time != 0);
@@ -47,6 +48,7 @@ class Weekly {
 		w.startDate = other.startDate;
 		w.endDate = other.endDate;
 		w.weeklyDescription = other.weeklyDescription;
+		w.weeklyType = other.weeklyType;
 		w.answers = other.answers;
 		w.createdOn = other.createdOn;
 		w.isTimed = other.isTimed;
@@ -98,7 +100,7 @@ class Weekly {
 		
 		if (this.endDate == 0) {
 			this.endDate = convertDateFormat(incrementDate(this.startDate,7));
-			//console.log("endDate :"+this.endDate.length);
+			console.log("endDate :"+this.endDate.length);
 			//console.log("enddate: "+this.endDate);
 		}
 		
@@ -427,10 +429,18 @@ class Weekly {
 		//console.log("dateEmojiReactCollection :"+dateEmojiReactCollection);
 		//console.log("dateDayCollection :"+dateDayCollection);
 		for (let i = 0; i < dateDayRange  && i < 8; ++i) {
-			//console.log("positionStart: "+positionStart);
-			//console.log("dateCollection: " + dateDayCollection[i]);
-			dateTextLines.push(String(`${dateEmojiCollection[i]}`+ " `\`"+ `${dateDayCollection[i]}`+ ": "+ `${dateCollection[i]}` +"`\`\n"));
+			console.log(this.weeklyType);
+			if (this.weeklyType == "no date") {
+
+				//console.log("positionStart: "+positionStart);
+				//console.log("dateCollection: " + dateDayCollection[i]);
+				dateTextLines.push(String(`${dateEmojiCollection[i]}`+ " `\`"+ `${dateDayCollection[i]}`+"`\`\n"));
+			
+			} else {
+				dateTextLines.push(String(`${dateEmojiCollection[i]}`+ " `\`"+ `${dateDayCollection[i]}`+ ": "+ `${dateCollection[i]}` +"`\`\n"));
+			}
 		}
+		
 		
 		
 		let dateTextLine = dateTextLines.join('');

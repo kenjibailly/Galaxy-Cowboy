@@ -4,7 +4,6 @@ const Poll = require("./poll.js");
 const Weekly = require("./weekly.js");
 const Datastore = require('nedb');
 
-
 const client = new Discord.Client();
 const prefix = String("`"+config.prefix+"`");
 
@@ -20,14 +19,14 @@ const helpEmbed = new Discord.RichEmbed()
 	.setThumbnail("attachment://osalien.jpg")
 	.addBlankField()
 	.addField("Create Weekly Poll", `\`${config.prefix}weekly "Title" "Starting Date" "Ending Date"\``+"\nFormat: YYYY-MM-DD format\ndates are optional fields, default starts today, ends in 7 days")
-	.addField("Create Weekly Custom Poll", `After \`${config.prefix}weekly "Title" "start date" "end date"\` you can put \`"Custom Description"\``)
+	.addField("Create Weekly Custom Poll", `\`${config.prefix} After weekly "Title" "start date" "end date" you can put "Custom Description"\``)
 	.addField("Create Y/N poll", `\`${config.prefix}poll "Question"\``)
 	.addField("Create complex poll [2-10 answers]", `\`${config.prefix}poll "Question" "Option 1" "Option 2" ["Option 3" ...]\` (quotes are necessary)`)
 	.addField("Timed polls that close automatically", `\`${config.prefix}{weekly/poll} time=X{s|m|h|d} ...\`\nX = length + secons, minutes, hours, days. 
 	This can be added in all polls before "Poll Question / Weekly Title"`)
-	.addField("See results of a poll and close the voting", `\`${config.prefix}end ID\`\nwhere ID is the poll id wich
+	.addField("See results of a poll and close the voting", `\`${config.prefix} end ID\`\nwhere ID is the poll id wich
 		appears at the end of the poll`)
-	.addField("See examples", `\`${config.prefix}examples\``)
+	.addField("See examples", `\`${config.prefix} examples\``)
 	.addBlankField()
 	.addField("About", "The bot has been created by Zep, leader and founder of Galaxy Cowboys. Feel free to report bugs.")
 	.setFooter("Credits to Zheoni for being able to use the source code of [here](http://github.com/Zheoni/VotaBot) and make this happen", 'attachment://zep.jpg')
@@ -128,6 +127,7 @@ async function weekly(msg, args) {
 	var question = args[1];
 	let endDate = [];
 	let startDate = [];
+	let weeklyType;
 	let weeklyDescription = "When are you available? Let us know!\n React with the emoji's for the according days you are available.";
 	
 
@@ -137,8 +137,12 @@ async function weekly(msg, args) {
 		var question = argsSpliced[0];
 	} else {
 		var argsSpliced = args.slice(1,args.length);
-
 	}
+
+	 if (args[6].includes("no date")) {
+		var argsSpliced = args.slice(2,args.length);
+		weeklyType = argsSpliced[4];
+	 }
 
 	if (argsSpliced.length >= 2) {
 		startDate = argsSpliced[1];
@@ -151,6 +155,7 @@ async function weekly(msg, args) {
 	if (argsSpliced.length >= 4){
 		weeklyDescription = argsSpliced[3];
 	} 
+
 	
 	let answers = [];
 	let type;
@@ -172,7 +177,7 @@ async function weekly(msg, args) {
 
 	let timeToVote = await parseTime(msg, args);
 
-	const w = await new Weekly(msg, question, startDate, endDate, weeklyDescription, answers, timeToVote, type);
+	const w = await new Weekly(msg, question, startDate, endDate, weeklyDescription, weeklyType, answers, timeToVote, type);
 	await w.start(msg);
 
 	if (w.hasFinished == false) {
@@ -278,7 +283,7 @@ function parseToArgs(msg) {
 		args.push(aux[1]);
 	}
 
-	if (args[0].includes("time")) {
+	if (args[0].includes("time") || args[0].includes("no date")) {
 		let aux = args[0].trim();
 		aux = aux.split(" ");
 		args.shift();
