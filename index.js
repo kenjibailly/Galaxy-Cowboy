@@ -139,7 +139,7 @@ async function weekly(msg, args) {
 		var argsSpliced = args.slice(1,args.length);
 	}
 
-	 if (args[6].includes("no date")) {
+	if (args[6]) {
 		var argsSpliced = args.slice(2,args.length);
 		weeklyType = argsSpliced[4];
 	 }
