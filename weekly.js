@@ -98,7 +98,7 @@ class Weekly {
 		
 		if (this.endDate == 0) {
 			this.endDate = convertDateFormat(incrementDate(this.startDate,7));
-			console.log("endDate :"+this.endDate.length);
+			//console.log("endDate :"+this.endDate.length);
 			//console.log("enddate: "+this.endDate);
 		}
 		
