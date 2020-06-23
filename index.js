@@ -1,4 +1,4 @@
-const Discord = require("discord.js");
+﻿const Discord = require("discord.js");
 const config = process.env;
 const Poll = require("./poll.js");
 const Weekly = require("./weekly.js");
@@ -6,7 +6,7 @@ const Datastore = require('nedb');
 
 
 const client = new Discord.Client();
-const prefix = String("`"+config.prefix+"`");
+const prefix = String("`"+config.prefix+"`")
 
 const commandSyntaxRegex = new RegExp(`^[${config.prefix}]\\s(((time=\\d+([smhd]?\\s))?("[^"\\n]+"\\s?){1,11})|(help)|(weekly\\s(time=\\d+([smhd]?\\s))?("[^"\\n]+"\\s?){1,11})|((poll\\s)?("[^"\\n]+"\\s?){1,11})|(examples)|(end\\s\\d+)|(invite))$`);
 //const commandSyntaxRegex = new RegExp(`^${config.prefix}\\s(((time=\\d+([smhd]?\\s))?("[^"\\n]+"\\s?){1,11})|(help)|(weekly\\s(time=\\d+([smhd]?\\s))?("[^"\\n]+"\\s?){1,11})|((poll\\s)?("[^"\\n]+"\\s?){1,11})|(examples)|(end\\s\\d+)|(invite))$`);

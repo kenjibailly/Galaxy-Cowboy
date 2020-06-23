@@ -1,4 +1,4 @@
-const Discord = require("discord.js");
+﻿const Discord = require("discord.js");
 const hash = require("string-hash");
 const config = process.env;
 const index = require("./index.js");
@@ -105,7 +105,7 @@ class Weekly {
 		//console.log("dateTimeRange: "+dateTimeRange);
 		let dateDayRange = dateTimeRange / (1000 * 3600 * 24)
 		//console.log("dateDayRange: "+dateDayRange);
-		dateDayRange = Math.floor(dateDayRange = dateDayRange + 1);
+		dateDayRange = dateDayRange + 1;
 		
 		for (let i = 0; i <= dateDayRange && i < 7; ++i) {
 			try {
@@ -347,7 +347,6 @@ class Weekly {
 		let dateDayRange = dateTimeRange / (1000 * 3600 * 24);
 		dateDayRange = dateDayRange + 1;
 		//console.log("datdayrange before for: "+dateDayRange);
-		dateDayRange = Math.floor(dateDayRange);
 
 		for (let i = 0; i <= dateDayRange && i < 7; ++i) {
 				//await message.react(this.emojis[i]);
@@ -368,7 +367,6 @@ class Weekly {
 					dateCollection.push(convertDateFormat(incrementDate(current_datetime,i)));
 					dateEmojiCollection.push(dayEmoji[position]);
 					dateEmojiReactCollection.push(String(reactEmoji[position]));
-					//console.log("dateDayRange :"+dateDayRange);
 					//console.log("position: " + position);
 					
 					
