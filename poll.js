@@ -1,4 +1,4 @@
-﻿const Discord = require("discord.js");
+const Discord = require("discord.js");
 const hash = require("string-hash");
 
 const numEmojis = ["1⃣", "2⃣", "3⃣", "4⃣", "5⃣", "6⃣", "7⃣", "8⃣", "9⃣", "🔟"];
@@ -43,6 +43,7 @@ class Poll {
 	}
 
 	async start(msg) {
+		console.log("start poll.js");
 		const message = await msg.channel.send({ embed: this.generateEmbed() })
 		this.msgId = message.id;
 		for (let i = 0; i < this.answers.length && i < 10; ++i) {

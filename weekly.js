@@ -1,6 +1,6 @@
-﻿const Discord = require("discord.js");
+const Discord = require("discord.js");
 const hash = require("string-hash");
-const config = process.env;
+const config = require("./botconfig.json");
 const index = require("./index.js");
 		
 const numEmojis = ["1⃣", "2⃣", "3⃣", "4⃣", "5⃣", "6⃣", "7⃣", "8⃣", "9⃣", "🔟"];
@@ -94,10 +94,14 @@ class Weekly {
 			this.startDate = convertDateFormat(incrementDate(date1,0));
 			//console.log("startdate: "+this.startDate);
 		}
+
+		
 		if (this.endDate == 0) {
-			this.endDate = convertDateFormat(incrementDate(date1,7));
+			this.endDate = convertDateFormat(incrementDate(this.startDate,7));
+			console.log("endDate :"+this.endDate.length);
 			//console.log("enddate: "+this.endDate);
 		}
+		
 		let date2 = new Date(this.endDate);
 		let dateTimeRange = date2.getTime() - date1.getTime();		
 		const message = await msg.channel.send({ embed: this.generateEmbed() })
@@ -105,19 +109,30 @@ class Weekly {
 		//console.log("dateTimeRange: "+dateTimeRange);
 		let dateDayRange = dateTimeRange / (1000 * 3600 * 24)
 		//console.log("dateDayRange: "+dateDayRange);
-		dateDayRange = dateDayRange + 1;
+		dateDayRange = Math.floor(dateDayRange = dateDayRange + 1);
+
+		if (dateDayRange > 7) {
+			dateDayRange = 7;
+		}
+		if (dateDayRange < 7){
+			dateDayRange = dateDayRange+1;
+		}
 		
-		for (let i = 0; i <= dateDayRange && i < 7; ++i) {
+		for (let i = 0; i < dateDayRange +1 && i < 7; ++i) {
 			try {
 				//console.log("dateEmojiReactCollection in start: "+dateEmojiReactCollection[i]);
+				//console.log(i);
+				//console.log("dateDayRange :"+dateDayRange);
+			
 				await message.react(dateEmojiReactCollection[i]);
+				
 				
 			} catch (error) {
 				console.log(error);
 			} 
 			//console.log(i);
 			//console.log("daterange: "+dateDayRange);
-			if (i >= dateDayRange || i >= 6) {
+			if (i >= dateDayRange -1 || i >= 6) {
 				position = 0;
 				dateDayCollection = [];
 				dateCollection = [];
@@ -220,7 +235,37 @@ class Weekly {
 		// let checkDate = startDate;
 		//console.log(`startDate Weekly: ${this.startDate}`);
 		//console.log(checkDate);
-		let current_datetime = new Date(this.startDate);
+		let current_datetime;
+		
+		if (this.startDate !== undefined) {
+			current_datetime = new Date(this.startDate);
+		} else {
+			this.startDate = convertDateFormatBack(current_datetime);
+			current_datetime = new Date();
+		}
+		//console.log(this.startDate);
+		function convertDateFormatBack(date) {
+			var Xmas95 = new Date(date);
+			var weekday = Xmas95.getDay();
+			var options = { weekday: 'long'};
+
+			var dayDate = new Intl.DateTimeFormat('en-US', options).format(Xmas95);
+			//console.log("dayDate "+dayDate);
+
+			var newDate = new Date(date);
+			let za = new Date(newDate),
+			//zaMf = za.months[date.getMonth()],
+    		zaR = za.getFullYear(),
+    		zaMth = za.getMonth() + 1,
+    		zaDs = za.getDate(),
+    		zaTm = za.toTimeString().substr(0,5);
+
+			var convertedDateFormat = `${zaR}-${zaMth}-${zaDs}`;
+			//var convertedDate = date.getDate() + "." + (date.getMonth()+1) + "." + date.getFullYear();
+			return convertedDateFormat;
+		}
+
+		//console.log("current_datetime :"+current_datetime);
 		//let actual_datetime = incrementDate(current_datetime,12)
 		let formatted_date = current_datetime.getDate() + "-" + (current_datetime.getMonth() + 1) + "-" + current_datetime.getFullYear()
 		//console.log(formatted_date)
@@ -231,18 +276,18 @@ class Weekly {
 			return increasedDate;
 		}
 
-		function convertDate(date) {
-			var newDate = new Date(date);
-			let za = new Date(newDate),
-    		zaR = za.getUTCFullYear(),
-    		zaMth = za.getUTCMonth(),
-    		zaDs = za.getUTCDate(),
-    		zaTm = za.toTimeString().substr(0,5);
+		// function convertDate(date) {
+		// 	var newDate = new Date(date);
+		// 	let za = new Date(newDate),
+    	// 	zaR = za.getUTCFullYear(),
+    	// 	zaMth = za.getUTCMonth(),
+    	// 	zaDs = za.getUTCDate(),
+    	// 	zaTm = za.toTimeString().substr(0,5);
 
-			var convertedDate = zaDs +"." + zaMth + "." + zaR;
-			//var convertedDate = date.getDate() + "." + (date.getMonth()+1) + "." + date.getFullYear();
-			return convertedDate;
-		}
+		// 	var convertedDate = zaDs +"." + zaMth + "." + zaR;
+		// 	//var convertedDate = date.getDate() + "." + (date.getMonth()+1) + "." + date.getFullYear();
+		// 	return convertedDate;
+		// }
 
 		function convertDayDate(date) {
 			var Xmas95 = new Date(date);
@@ -289,21 +334,10 @@ class Weekly {
 		}
 
 
-		let dateOne = convertDate(incrementDate(current_datetime,0));
-		let dateTuesday = convertDate(incrementDate(current_datetime,1));
-		let dateWednesday = convertDate(incrementDate(current_datetime,2));
-		let dateThursday = convertDate(incrementDate(current_datetime,3));
-		let dateFriday = convertDate(incrementDate(current_datetime,4));
-		let dateSaturday = convertDate(incrementDate(current_datetime,5));
-		let dateSunday = convertDate(incrementDate(current_datetime,6));
+		// let dateOne = convertDate(incrementDate(current_datetime,0));
 
 		let dateFormatOne = convertDayDate(current_datetime);
-		// let dateFormatTwo = convertDayDate(convertDateFormat(incrementDate(current_datetime,1)));
-		// let dateFormatThree = convertDayDate(convertDateFormat(incrementDate(current_datetime,2)));
-		// let dateFormatFour = convertDayDate(convertDateFormat(incrementDate(current_datetime,3)));
-		// let dateFormatFive = convertDayDate(convertDateFormat(incrementDate(current_datetime,4)));
-		// let dateFormatSix = convertDayDate(convertDateFormat(incrementDate(current_datetime,5)));
-		// let dateFormatSeven = convertDayDate(convertDateFormat(incrementDate(current_datetime,6)));
+
 
 		
 		let positionStart;
@@ -343,30 +377,39 @@ class Weekly {
 		position = positionStart -1;
 		let date1 = new Date(this.startDate);
 		let date2 = new Date(this.endDate);
+		//console.log("date1: "+date1+" date 2: "+date2);
 		let dateTimeRange = date2.getTime() - date1.getTime();
 		let dateDayRange = dateTimeRange / (1000 * 3600 * 24);
-		dateDayRange = dateDayRange + 1;
+		//dateDayRange = dateDayRange + 1;
 		//console.log("datdayrange before for: "+dateDayRange);
+		dateDayRange = Math.floor(dateDayRange);
 
+		if (dateDayRange < 7){
+			dateDayRange = dateDayRange+1;
+		}
+		//console.log("position: "+position);
 		for (let i = 0; i <= dateDayRange && i < 7; ++i) {
 				//await message.react(this.emojis[i]);
-				//console.log(i);
+				
 
 				if (position >= days.length -1) {
 					position = 0;
-				} else {
+				} else if (i <= dateDayRange) {
 					position++;
 				}
-
 				//console.log("current_datetime: "+convertDateFormat(current_datetime));
 
 
 				if (positionStart < days.length ) {
 					//console.log("position start: "+positionStart);
+					//console.log("position: "+position);
 					dateDayCollection.push(days[position]);
 					dateCollection.push(convertDateFormat(incrementDate(current_datetime,i)));
 					dateEmojiCollection.push(dayEmoji[position]);
-					dateEmojiReactCollection.push(String(reactEmoji[position]));
+					//if (position >= dateDayRange) {
+						dateEmojiReactCollection.push(String(reactEmoji[position]));
+					//}
+					//console.log("dateDayRange :"+dateDayRange);
 					//console.log("position: " + position);
 					
 					
@@ -380,8 +423,10 @@ class Weekly {
 				//console.log("dateCollection: " + dateCollection[i]);
 				
 		}
-		
-		for (let i = 0; i < dateDayRange && i < 7; ++i) {
+
+		//console.log("dateEmojiReactCollection :"+dateEmojiReactCollection);
+		//console.log("dateDayCollection :"+dateDayCollection);
+		for (let i = 0; i < dateDayRange  && i < 8; ++i) {
 			//console.log("positionStart: "+positionStart);
 			//console.log("dateCollection: " + dateDayCollection[i]);
 			dateTextLines.push(String(`${dateEmojiCollection[i]}`+ " `\`"+ `${dateDayCollection[i]}`+ ": "+ `${dateCollection[i]}` +"`\`\n"));
@@ -394,7 +439,7 @@ class Weekly {
 			// .setAuthor(`❓ ${this.question} ${endDate}`)
 			.setAuthor("Weekly Scheduler", "https://cdn1.vectorstock.com/i/1000x1000/57/80/ufo-neon-sign-design-template-aliens-neon-vector-26235780.jpg", "https://img.freepik.com/free-vector/alien-outer-space-neon-sign_104045-467.jpg?size=338&ext=jpg")
 			.setTitle(`❓ ${this.question} ❓`)
-			.addField(`This bot is made by Galaxy Cowboys!`, `Make your own poll, try out \`${config.prefix} help\` and \`${config.prefix} Examples\``)
+			.addField(`This bot is made by Galaxy Cowboys!`, `Make your own poll, try out \`${config.prefix}help\` and \`${config.prefix}examples\``)
 			//.setDescription(`${this.weeklyDescription}` + `${this.dateTextLine}` + "\n\n"+ `${dateEmojiCollection[0]}`+ " `\`"+ `${dateDayCollection[0]}`+ ": "+ `${dateCollection[0]}` +"`\`\n"+ `${dateEmojiCollection[1]}`+ " `\`"+ `${dateDayCollection[1]}`+ ": "+ `${dateCollection[1]}` +"`\`\n"+ `${dateEmojiCollection[2]}`+ " `\`"+ `${dateDayCollection[2]}`+ ": "+ `${dateCollection[2]}` +"`\`\n"+ `${dateEmojiCollection[3]}`+ " `\`"+ `${dateDayCollection[3]}`+ ": "+ `${dateCollection[3]}` +"`\`\n"+ `${dateEmojiCollection[4]}`+ " `\`"+ `${dateDayCollection[4]}`+ ": "+ `${dateCollection[4]}` +"`\`\n"+ `${dateEmojiCollection[5]}`+ " `\`"+ `${dateDayCollection[5]}`+ ": "+ `${dateCollection[5]}` +"`\`\n"+ `${dateEmojiCollection[6]}`+ " `\`"+ `${dateDayCollection[6]}`+ ": "+ `${dateCollection[6]}` +"`\`\n\n")
 			.setDescription(`${this.weeklyDescription}` + "\n\n"+ dateTextLine)
 			.setColor("#d596ff")

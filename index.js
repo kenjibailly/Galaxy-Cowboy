@@ -1,14 +1,14 @@
-﻿const Discord = require("discord.js");
-const config = process.env;
+const Discord = require("discord.js");
+const config = require("./botconfig.json");
 const Poll = require("./poll.js");
 const Weekly = require("./weekly.js");
 const Datastore = require('nedb');
 
 
 const client = new Discord.Client();
-const prefix = String("`"+config.prefix+"`")
+const prefix = String("`"+config.prefix+"`");
 
-const commandSyntaxRegex = new RegExp(`^[${config.prefix}]\\s(((time=\\d+([smhd]?\\s))?("[^"\\n]+"\\s?){1,11})|(help)|(weekly\\s(time=\\d+([smhd]?\\s))?("[^"\\n]+"\\s?){1,11})|((poll\\s)?("[^"\\n]+"\\s?){1,11})|(examples)|(end\\s\\d+)|(invite))$`);
+const commandSyntaxRegex = new RegExp(`^[${config.prefix}]((poll\\s(time=\\d+([smhd]?\\s))?("[^"\\n]+"\\s?){1,11})|(help)|(weekly\\s(time=\\d+([smhd]?\\s))?("[^"\\n]+"\\s?){1,11})|(examples)|(end\\s\\d+)|(invite))$`);
 //const commandSyntaxRegex = new RegExp(`^${config.prefix}\\s(((time=\\d+([smhd]?\\s))?("[^"\\n]+"\\s?){1,11})|(help)|(weekly\\s(time=\\d+([smhd]?\\s))?("[^"\\n]+"\\s?){1,11})|((poll\\s)?("[^"\\n]+"\\s?){1,11})|(examples)|(end\\s\\d+)|(invite))$`);
 //const commandSyntaxRegex = new RegExp(`^${config.prefix}(weekly\\s(time=\\d+([smhd]?\\s+))?(([^\s\\n\]+"\\s?){1,11})?)$`)
 
@@ -19,11 +19,11 @@ const helpEmbed = new Discord.RichEmbed()
 	.attachFiles(['./assets/zep.jpg', './assets/osalien.jpg'])
 	.setThumbnail("attachment://osalien.jpg")
 	.addBlankField()
-	.addField("Create Weekly Poll", `\`${config.prefix} Weekly "Title" "Starting Date" "Ending Date"\``+"\nFormat: YYYY-MM-DD format\ndates are optional fields, default starts today, ends in 7 days")
-	.addField("Create Weekly Custom Poll", `\`${config.prefix} After Weekly "Title" "start date" "end date" you can put "Custom Description"\``)
-	.addField("Create Y/N poll", `\`${config.prefix} "Question"\``)
-	.addField("Create complex poll [2-10 answers]", `\`${config.prefix} "Question" "Option 1" "Option 2" ["Option 3" ...]\` (quotes are necessary)`)
-	.addField("Timed polls that close automatically", `\`${config.prefix} time=X{s|m|h|d} ...\`\nX = length + secons, minutes, hours, days. 
+	.addField("Create Weekly Poll", `\`${config.prefix}weekly "Title" "Starting Date" "Ending Date"\``+"\nFormat: YYYY-MM-DD format\ndates are optional fields, default starts today, ends in 7 days")
+	.addField("Create Weekly Custom Poll", `\`${config.prefix} After weekly "Title" "start date" "end date" you can put "Custom Description"\``)
+	.addField("Create Y/N poll", `\`${config.prefix}poll "Question"\``)
+	.addField("Create complex poll [2-10 answers]", `\`${config.prefix}poll "Question" "Option 1" "Option 2" ["Option 3" ...]\` (quotes are necessary)`)
+	.addField("Timed polls that close automatically", `\`${config.prefix}{weekly/poll} time=X{s|m|h|d} ...\`\nX = length + secons, minutes, hours, days. 
 	This can be added in all polls before "Poll Question / Weekly Title"`)
 	.addField("See results of a poll and close the voting", `\`${config.prefix} end ID\`\nwhere ID is the poll id wich
 		appears at the end of the poll`)
@@ -45,13 +45,13 @@ const examplesEmbed = new Discord.RichEmbed()
 	.attachFiles(['./assets/zep.jpg', './assets/osalien.jpg'])
 	.setThumbnail("attachment://osalien.jpg")
 	.addBlankField()
-	.addField("Weekly Poll", `\`${config.prefix} Weekly "Title" "2020-06-22" "2020-06-28"\``)
-	.addField("Custom Weekly Poll", `\`${config.prefix} Weekly "Title" "Custom Description"\``)
-	.addField("Y/N Poll", `\`${config.prefix} "Do you like this?"\``)
-	.addField("Complex poll", `\`${config.prefix} "What do you wanna play?" "GW2" "GW2!" "GW2!!"\``)
-	.addField("Timed Weekly Poll", `\`${config.prefix} time=7d "Title"\``)
-	.addField("Timed Poll", `\`${config.prefix} time=6h "Chat tonight?"\``)
-	.addField("See the results of a poll", `\`${config.prefix} end 61342378\``)
+	.addField("Weekly Poll", `\`${config.prefix}weekly "Title" "2020-06-22" "2020-06-28"\``)
+	.addField("Custom Weekly Poll", `\`${config.prefix}weekly "Title" "Custom Description"\``)
+	.addField("Y/N Poll", `\`${config.prefix}poll "Do you like this?"\``)
+	.addField("Complex poll", `\`${config.prefix}poll "What do you wanna play?" "GW2" "GW2!" "GW2!!"\``)
+	.addField("Timed Weekly Poll", `\`${config.prefix}weekly time=7d "Title"\``)
+	.addField("Timed Poll", `\`${config.prefix}poll time=6h "Chat tonight?"\``)
+	.addField("See the results of a poll", `\`${config.prefix}poll end 61342378\``)
 	.addBlankField()
 	.attachFiles(['./assets/zep.jpg'])
 	.setFooter("The bot has been created by Zep, leader and founder of Galaxy Cowboys.\nFeel free to report bugs.", 'attachment://zep.jpg')
@@ -94,25 +94,26 @@ async function finishTimedPolls() {
 
 async function poll(msg, args) {
 	const timeToVote = await parseTime(msg, args);
-
-	const question = args.shift();
+	const question = args[1];
 	let answers = [];
 	let type;
 
 	switch (args.length) {
 		case 0:
+			msg.reply("You cannot create a poll with no question");
+			return;
+		case 1:
 			answers = ["", ""];
 			type = "yn";
 			break;
-		case 1:
-			msg.reply("You cannot create a poll with only one answer");
-			return;
 		default:
 			answers = args;
 			type = "default";
 			break;
 	}
 
+	console.log("type: "+type);
+	args.splice(0,2);
 	const p = await new Poll(msg, question, answers, timeToVote, type);
 
 	await p.start(msg);
@@ -124,34 +125,31 @@ async function poll(msg, args) {
 }
 
 async function weekly(msg, args) {
-	const timeToVote = await parseTime(msg, args);
-	const question = args[1];
+	var question = args[1];
 	let endDate = [];
 	let startDate = [];
-
-	if (args.length == 3) {
-		startDate = args[2];
-	}
-
-	if (args.length == 4) {
-		endDate = args[3];
-	}
-
-	// const dateFormatRegEx = /^(\d{4}-\d{2}-\d{2})$/;
-	// let matchDateFormat;
-	// matchDateFormat = startDate.match(dateFormatRegEx);
-
-	// if (matchDateFormat != null) {
-	// } else {
-	// 	msg.reply(`Wrong date syntax. Learn how to do it correctly with \`${config.prefix} help\``);
-	// 	return;
-	// }
-
-	
-	//console.log(`startDate Index: ${startDate}`);
 	let weeklyDescription = "When are you available? Let us know!\n React with the emoji's for the according days you are available.";
-	if (args.length == 5){
-		weeklyDescription = args[4];
+	
+
+	if (args[1].includes("time")) {
+		var argsSpliced = args.slice(2,args.length);
+		
+		var question = argsSpliced[0];
+	} else {
+		var argsSpliced = args.slice(1,args.length);
+
+	}
+
+	if (argsSpliced.length >= 2) {
+		startDate = argsSpliced[1];
+	}
+
+	if (argsSpliced.length >= 3) {
+		endDate = argsSpliced[2];
+	}
+
+	if (argsSpliced.length >= 4){
+		weeklyDescription = argsSpliced[3];
 	} 
 	
 	let answers = [];
@@ -171,6 +169,8 @@ async function weekly(msg, args) {
 			type = "yn";
 			break;
 	}
+
+	let timeToVote = await parseTime(msg, args);
 
 	const w = await new Weekly(msg, question, startDate, endDate, weeklyDescription, answers, timeToVote, type);
 	await w.start(msg);
@@ -210,10 +210,10 @@ function parseTime(msg, args) {
 	let time = 0;
 
 	//parse the time limit if it exists
-	if (args[0].startsWith("time=")) {
+	if (args[1].startsWith("time=")) {
 		const timeRegex = /\d+/;
 		const unitRegex = /s|m|h|d/i;
-		let timeString = args.shift();
+		let timeString = args[1];
 		let unit = "s";
 
 		let match;
@@ -222,6 +222,7 @@ function parseTime(msg, args) {
 		match = timeString.match(timeRegex);
 		if (match != null) {
 			time = parseInt(match.shift());
+			//console.log("check time: "+time);
 		} else {
 			msg.reply("Wrong time syntax!");
 			return;
@@ -243,36 +244,50 @@ function parseTime(msg, args) {
 			default: time *= 60000;
 		}
 	}
-
 	if (time > 604800000) return 604800000; // no more than a week.
 	else return time;
 }
 
 function parseToArgs(msg) {
-	
 	let args = msg.content.slice(config.prefix.length)
 		.trim()
 		.split("\"")
 		.filter((phrase) => phrase.trim() !== "");
-
-		//msg.reply("args before shifted: "+`${args[0]}`);
-	if (args[0].startsWith("weekly")) {
-		let aux = args[0].split(" ");
-		args[0] = aux[0];
-		aux.shift();
-		//msg.reply("args shifted: "+`${args[0]}`);
-	}
 		
-	for (let i = 0; i < args.length; i++){
-
-			args[i] = args[i].trim();
-	}
+	if (args[0].startsWith("weekly")) {
+		
+		if (args.length == 4) {
+			startDate = args[3];
+		}
 	
-	if (args[0].startsWith("end")) {
+		if (args.length == 5) {
+			endDate = args[4];
+		}
+
+		if (args.length == 6){
+			weeklyDescription = args[5];
+		} 
+
+		args[0] = args[0].trim();
+		let aux = args[0];
+		aux = aux.split(" ");
+
+	} else 	if (args[0].startsWith("end")) {
 		let aux = args[0].split(" ");
 		args[0] = aux[0];
 		args.push(aux[1]);
 	}
+
+	if (args[0].includes("time")) {
+		let aux = args[0].trim();
+		aux = aux.split(" ");
+		args.shift();
+		args.unshift(aux[0], aux[1]);
+
+	}
+
+	
+
 
 	return args;
 }
@@ -285,7 +300,7 @@ function cleanDatabase() {
 
 client.on("ready", () => {
 	console.log(`Bot logged in as ${client.user.tag}!`);
-	client.user.setActivity(`${config.prefix} help`);
+	client.user.setActivity(`${config.prefix}help`);
 
 	setInterval(finishTimedPolls, 10000); // 10s
 	setInterval(cleanDatabase, 86400000); // 24h
@@ -318,9 +333,12 @@ client.on("message", async (msg) => {
 		}
 
 		if (msg.content.match(commandSyntaxRegex)) {
+			//console.log("args[0]: "+args[0]);
 			let args = parseToArgs(msg);
 			if (args.length > 0) {
 				//msg.reply(`${args[0]} executed in ${msg.guild ? msg.guild.name : (msg.author.username + "'s DMs")} by ${msg.author.tag}`);
+				args[0] = String(args[0]);
+				
 				switch (args[0]) {
 					case "help":
 						dmChannel = await msg.author.createDM();
@@ -331,6 +349,13 @@ client.on("message", async (msg) => {
 						dmChannel = await msg.author.createDM();
 						dmChannel.send({ embed: examplesEmbed });
 						break;
+					case "weekly":
+						//console.log("weekly happened");
+						if (!isDM) {
+							weekly(msg, args);
+						}
+					//msg.reply("weekly");
+					break;
 					case "end":
 						if (!isDM) {
 							end(msg, args);
@@ -349,16 +374,6 @@ client.on("message", async (msg) => {
 							poll(msg, args);
 						}
 						break;
-					case "weekly":
-						// msg = await msg.author.createDM();
-						// msg.reply({ embed: weeklyEmbed });
-						if (!isDM) {
-							//msg.reply(`${args[1]}`);
-							//msg.reply("msg "+msg);
-							weekly(msg, args);
-						}
-						//msg.reply("weekly");
-						break;
 					default:
 						//msg.reply("default");
 						//msg.reply("msg "+msg);
@@ -366,12 +381,13 @@ client.on("message", async (msg) => {
 						if (!isDM) {
 							poll(msg, args);
 						}
+						//console.log("default happened");
 						break;
 				}
 			} else {
 				//msg.reply("Sorry, give me more at least a question");
 			}
-		} else msg.reply(`Wrong command syntax. Learn how to do it correctly with \`${config.prefix} help\``);
+		} else msg.reply(`Wrong command syntax. Learn how to do it correctly with \`${config.prefix}help\``);
 		
 	
 		
@@ -380,4 +396,4 @@ client.on("message", async (msg) => {
 
 client.on("error", console.error);
 
-client.login(process.env.TOKEN).then((token) => console.log("Logged in successfully")).catch(console.error);
+client.login(config.token).then((token) => console.log("Logged in successfully")).catch(console.error);
