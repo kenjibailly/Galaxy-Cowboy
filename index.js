@@ -4,6 +4,8 @@ const Poll = require("./poll.js");
 const Weekly = require("./weekly.js");
 const Datastore = require('nedb');
 
+
+
 const client = new Discord.Client();
 const prefix = String("`"+config.prefix+"`");
 
@@ -45,7 +47,8 @@ const examplesEmbed = new Discord.RichEmbed()
 	.setThumbnail("attachment://osalien.jpg")
 	.addBlankField()
 	.addField("Weekly Poll", `\`${config.prefix}weekly "Title" "2020-06-22" "2020-06-28"\``)
-	.addField("Custom Weekly Poll", `\`${config.prefix}weekly "Title" "Custom Description"\``)
+	.addField("Custom Weekly Poll", `\`${config.prefix}weekly "Title" "2020-06-22" "2020-06-28" "Custom Description"\``)
+	.addField("Custom Weekly Poll without dates", `\`${config.prefix}weekly "Title" "2020-06-22" "2020-06-28" "Custom Description" "no dates"\``)
 	.addField("Y/N Poll", `\`${config.prefix}poll "Do you like this?"\``)
 	.addField("Complex poll", `\`${config.prefix}poll "What do you wanna play?" "GW2" "GW2!" "GW2!!"\``)
 	.addField("Timed Weekly Poll", `\`${config.prefix}weekly time=7d "Title"\``)
@@ -111,7 +114,7 @@ async function poll(msg, args) {
 			break;
 	}
 
-	console.log("type: "+type);
+	//console.log("type: "+type);
 	args.splice(0,2);
 	const p = await new Poll(msg, question, answers, timeToVote, type);
 
@@ -133,16 +136,21 @@ async function weekly(msg, args) {
 
 	if (args[1].includes("time")) {
 		var argsSpliced = args.slice(2,args.length);
+
+		if (argsSpliced[4]) {
+			var argsSpliced = args.slice(2,args.length);
+			weeklyType = argsSpliced[4];
+		 }
 		
 		var question = argsSpliced[0];
 	} else {
 		var argsSpliced = args.slice(1,args.length);
+		if (argsSpliced[4]) {
+			console.log("argsspliced: "+argsSpliced);
+			weeklyType = argsSpliced[4];
+		 }
 	}
 
-	if (args[6]) {
-		var argsSpliced = args.slice(2,args.length);
-		weeklyType = argsSpliced[4];
-	 }
 
 	if (argsSpliced.length >= 2) {
 		startDate = argsSpliced[1];
