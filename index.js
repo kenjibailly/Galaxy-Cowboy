@@ -1,5 +1,5 @@
 const Discord = require("discord.js");
-const config = require("./botconfig.json");
+const config = process.env);
 const Poll = require("./poll.js");
 const Weekly = require("./weekly.js");
 const Datastore = require('nedb');
@@ -396,4 +396,4 @@ client.on("message", async (msg) => {
 
 client.on("error", console.error);
 
-client.login(config.token).then((token) => console.log("Logged in successfully")).catch(console.error);
+client.login(config.TOKEN).then((token) => console.log("Logged in successfully")).catch(console.error);

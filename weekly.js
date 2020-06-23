@@ -1,6 +1,6 @@
 const Discord = require("discord.js");
 const hash = require("string-hash");
-const config = require("./botconfig.json");
+const config = process.env;
 const index = require("./index.js");
 		
 const numEmojis = ["1⃣", "2⃣", "3⃣", "4⃣", "5⃣", "6⃣", "7⃣", "8⃣", "9⃣", "🔟"];
