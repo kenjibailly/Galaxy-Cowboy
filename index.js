@@ -146,7 +146,7 @@ async function weekly(msg, args) {
 	} else {
 		var argsSpliced = args.slice(1,args.length);
 		if (argsSpliced[4]) {
-			//console.log("argsspliced: "+argsSpliced);
+			console.log("argsspliced: "+argsSpliced);
 			weeklyType = argsSpliced[4];
 		 }
 	}

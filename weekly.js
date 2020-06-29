@@ -100,7 +100,7 @@ class Weekly {
 		
 		if (this.endDate == 0) {
 			this.endDate = convertDateFormat(incrementDate(this.startDate,7));
-			//console.log("endDate :"+this.endDate.length);
+			console.log("endDate :"+this.endDate.length);
 			//console.log("enddate: "+this.endDate);
 		}
 		
@@ -429,7 +429,7 @@ class Weekly {
 		//console.log("dateEmojiReactCollection :"+dateEmojiReactCollection);
 		//console.log("dateDayCollection :"+dateDayCollection);
 		for (let i = 0; i < dateDayRange  && i < 8; ++i) {
-			//console.log(this.weeklyType);
+			console.log(this.weeklyType);
 			if (this.weeklyType == "no date") {
 
 				//console.log("positionStart: "+positionStart);
