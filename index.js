@@ -4,10 +4,13 @@ const Poll = require("./poll.js");
 const Weekly = require("./weekly.js");
 const Datastore = require('nedb');
 
+<<<<<<< HEAD
 var mysql = require('mysql');
 
   var con = mysql.createConnection(config.CLEARDB_DATABASE_URL);
 
+=======
+>>>>>>> parent of 6385757... DB V1
 const client = new Discord.Client();
 const prefix = String("`"+config.prefix+"`");
 
@@ -124,6 +127,7 @@ async function poll(msg, args) {
 
 	if (p.hasFinished == false) {
 		database.insert(p);
+		console.log("p: "+p);
 		// maybe we can get a duplicated id...
 	}
 }
@@ -133,7 +137,7 @@ async function weekly(msg, args) {
 	let endDate = [];
 	let startDate = [];
 	let weeklyType;
-	let weeklyDescription = String("When are you available? Let us know!");
+	let weeklyDescription = "When are you available? Let us know!\n React with the emoji's for the according days you are available.";
 	
 
 	if (args[1].includes("time")) {
@@ -191,6 +195,7 @@ async function weekly(msg, args) {
 	await w.start(msg);
 
 	if (w.hasFinished == false) {
+<<<<<<< HEAD
 		//database.insert(w);
 		
 			//console.log("weeklyDescription: "+weeklyDescription);
@@ -208,6 +213,9 @@ async function weekly(msg, args) {
 
 		//console.log("w: "+JSON.stringify(w));
 		//console.log("w.guildId"+w.guildId);
+=======
+		database.insert(w);
+>>>>>>> parent of 6385757... DB V1
 		// maybe we can get a duplicated id...
 	}
 }
@@ -216,35 +224,26 @@ async function weekly(msg, args) {
 
 async function end(msg, args) {
 	const inputid = Number(args[1]);
-	 // finish event make it red
-	var w;
-	con.query("SELECT * FROM polls WHERE id = '"+inputid+"'", function (err, dbp, fields) {
-		  if (err) throw err;
-		  //const w = Weekly.copyConstructor(dbp);
-
-		  //console.log("dbp :");
-		  //console.log(dbp[0]);
-		  w = Weekly.copyConstructor(dbp[0]);
-		  w.answers = w.answers.split(',');
-		  w.emojis = w.emojis.split(',');
-		  w.results = w.results.split(',');
-		  w.hasFinished = false;
-		//   console.log(w);
-		//console.log("args: "+args[1]);
-			if (w) {
-					//console.log(client);
-					w.finish(client);
-					var sql = "DELETE FROM polls WHERE id = '"+w.id+"'";
-					con.query(sql, function (err, result) {
-					  if (err) throw err;
-					  console.log("Number of records deleted: " + result.affectedRows);
-					  msg.reply("Poll "+w.id+" deleted.");
-					});
-					
-		} else {
-				msg.reply("Cannot find the poll.");
+	database.findOne({ id: inputid }, (err, dbp) => {
+		if (err) { console.errror(err); }
+		if (dbp) {
+			console.log(dbp);
+			const w = Weekly.copyConstructor(dbp);
+			const p = Poll.copyConstructor(dbp);
+			
+		// 	if (!p.hasFinished && p.guildId === msg.guild.id) {
+		// 		p.finish(client)
+		// 		database.remove({ id: p.id });
+			
+		// } else 
+		if(!w.hasFinished && w.guildId === msg.guild.id) {
+				w.finish(client)
+				database.remove({ id: w.id });
 			}
-		});
+		} else {
+			msg.reply("Cannot find the poll.");
+		}
+	});
 }
 
 function parseTime(msg, args) {

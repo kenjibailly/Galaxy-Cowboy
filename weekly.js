@@ -52,7 +52,7 @@ class Weekly {
 		w.createdOn = other.createdOn;
 		w.isTimed = other.isTimed;
 		w.finishTime = other.finishTime;
-		w.hasFinished = other.hasFInished;
+		w.hasFinished = other.hasFinished;
 		w.type = other.type;
 		w.emojis = other.emojis;
 		w.results = other.results;
@@ -121,9 +121,9 @@ class Weekly {
 		
 		for (let i = 0; i < dateDayRange && i < 7; ++i) {
 			try {
-				//console.log("dateEmojiReactCollection in start: "+dateEmojiReactCollection);
+				console.log("dateEmojiReactCollection in start: "+dateEmojiReactCollection);
 				//console.log(i);
-				//console.log("dateDayRange :"+dateDayRange);
+				console.log("dateDayRange :"+dateDayRange);
 			
 				await message.react(dateEmojiReactCollection[i]);
 				
@@ -153,7 +153,10 @@ class Weekly {
 
 	async finish(client) {
 		const now = new Date();
+<<<<<<< HEAD
 		//console.log(this.getWeeklyMessage(client));
+=======
+>>>>>>> parent of 6385757... DB V1
 		const message = await this.getWeeklyMessage(client);
 		if (!message) {
 			console.error("Cant find poll message");
@@ -178,6 +181,19 @@ class Weekly {
 		} catch (error) {
 			console.error(error);
 		}
+
+		// clearArrays();
+
+		// function clearArrays(){
+		// 	setTimeout(function(){
+		// 			position = 0;
+		// 			dateDayCollection = [];
+		// 			dateCollection = [];
+		// 			dateEmojiCollection = [];
+		// 			dateEmojiReactCollection = [];
+		// 			dateTextLines = [];
+		// 	},10000);
+		// }
 	}
 
 	async getWeeklyVotes(message) {
