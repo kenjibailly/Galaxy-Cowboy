@@ -4,8 +4,6 @@ const Poll = require("./poll.js");
 const Weekly = require("./weekly.js");
 const Datastore = require('nedb');
 
-
-
 const client = new Discord.Client();
 const prefix = String("`"+config.prefix+"`");
 

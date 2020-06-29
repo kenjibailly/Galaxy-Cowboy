@@ -2,7 +2,6 @@ const Discord = require("discord.js");
 const hash = require("string-hash");
 const config = process.env;
 const index = require("./index.js");
-		
 const numEmojis = ["1⃣", "2⃣", "3⃣", "4⃣", "5⃣", "6⃣", "7⃣", "8⃣", "9⃣", "🔟"];
 const reactEmoji = ["723732274163482673", "723731107471687680", "723732274054561867", "723732274004230175", "723732274012487732", "723732274117476412", "723732273903435827"];
 var dayEmoji = ["<:Sunday:723732274163482673>", "<:Monday:723731107471687680>", "<:Tuesday:723732274054561867>", "<:Wednesay:723732274004230175>", "<:Thursday:723732274012487732>", "<:Friday:723732274117476412>", "<:Saturday:723732273903435827>"];
@@ -116,15 +115,15 @@ class Weekly {
 		if (dateDayRange > 7) {
 			dateDayRange = 7;
 		}
-		if (dateDayRange < 7){
-			dateDayRange = dateDayRange+1;
-		}
+		// if (dateDayRange < 7){
+		// 	dateDayRange = dateDayRange+1;
+		// }
 		
-		for (let i = 0; i < dateDayRange +1 && i < 7; ++i) {
+		for (let i = 0; i < dateDayRange && i < 7; ++i) {
 			try {
-				//console.log("dateEmojiReactCollection in start: "+dateEmojiReactCollection[i]);
+				console.log("dateEmojiReactCollection in start: "+dateEmojiReactCollection);
 				//console.log(i);
-				//console.log("dateDayRange :"+dateDayRange);
+				console.log("dateDayRange :"+dateDayRange);
 			
 				await message.react(dateEmojiReactCollection[i]);
 				
@@ -385,6 +384,10 @@ class Weekly {
 		//dateDayRange = dateDayRange + 1;
 		//console.log("datdayrange before for: "+dateDayRange);
 		dateDayRange = Math.floor(dateDayRange);
+
+		if (dateDayRange > 7) {
+			dateDayRange = 7;
+		}
 
 		if (dateDayRange < 7){
 			dateDayRange = dateDayRange+1;
