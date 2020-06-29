@@ -7,7 +7,7 @@ const Datastore = require('nedb');
 var mysql = require('mysql');
 
 var con = mysql.createConnection({
-	host: config.DATABASE,
+	host: config.HOST,
 	user: config.USER,
 	password: config.PASSWORD,
 	database: config.DATABASE
