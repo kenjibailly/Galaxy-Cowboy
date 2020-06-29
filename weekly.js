@@ -52,7 +52,7 @@ class Weekly {
 		w.createdOn = other.createdOn;
 		w.isTimed = other.isTimed;
 		w.finishTime = other.finishTime;
-		w.hasFinished = other.hasFInished;
+		w.hasFinished = other.hasFinished;
 		w.type = other.type;
 		w.emojis = other.emojis;
 		w.results = other.results;
