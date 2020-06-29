@@ -227,7 +227,6 @@ async function end(msg, args) {
 	database.findOne({ id: inputid }, (err, dbp) => {
 		if (err) { console.errror(err); }
 		if (dbp) {
-			console.log(dbp);
 			const w = Weekly.copyConstructor(dbp);
 			const p = Poll.copyConstructor(dbp);
 			
