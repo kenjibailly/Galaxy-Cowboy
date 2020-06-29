@@ -122,6 +122,7 @@ async function poll(msg, args) {
 
 	if (p.hasFinished == false) {
 		database.insert(p);
+		console.log("p: "+p);
 		// maybe we can get a duplicated id...
 	}
 }
