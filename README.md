@@ -36,5 +36,5 @@ Then in a command line in the bot's folder use `npm install`.
 Now, to start the bot use `node index.js`.
 
 I'm also hosting an instance of the bot you can invite it with this link:
-<https://discordapp.com/api/oauth2/authorize?client_id=509451579678654468&permissions=68672&scope=bot>
+
 "# Galaxy-Cowboy" 
