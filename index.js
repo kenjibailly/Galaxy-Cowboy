@@ -6,13 +6,6 @@ const Datastore = require('nedb');
 
 var mysql = require('mysql');
 
-// var con = mysql.createConnection({
-// 	host: config.HOST,
-// 	user: config.USER,
-// 	password: config.PASSWORD,
-// 	database: config.DATABASE
-//   });
-
   var con = mysql.createConnection(config.CLEARDB_DATABASE_URL);
 
 const client = new Discord.Client();
@@ -203,9 +196,9 @@ async function weekly(msg, args) {
 			//console.log("weeklyDescription: "+weeklyDescription);
 			// if (err) throw err;
 			//console.log("Connected!");
-			console.log(w);
+			//console.log(w);
 			var insertValues = w.id+"', '"+w.guildId+"', '"+w.channelId+"', '"+w.msgId+"', '"+w.question+"', '"+w.startDate+"', '"+w.endDate+"', '"+w.weeklyDescription+"', '"+w.answers+"', '"+w.createdOn+"', '"+w.isTimed+"', '"+w.hasFinished+"', '"+w.finishTime+"', '"+w.type+"', '"+w.emojis+"', '"+w.results;
-			console.log("insertValues: "+insertValues);
+			//console.log("insertValues: "+insertValues);
 			var sql = "INSERT INTO polls (id, guildId, channelId, msgId, question, startDate, endDate, weeklyDescription, answers, createdOn, isTimed, hasFinished, finishTime, type, emojis, results) VALUES ('"+insertValues+"')";
 			con.query(sql, function (err, result) {
 			  if (err) throw err;

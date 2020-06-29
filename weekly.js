@@ -153,7 +153,7 @@ class Weekly {
 
 	async finish(client) {
 		const now = new Date();
-		console.log(this.getWeeklyMessage(client));
+		//console.log(this.getWeeklyMessage(client));
 		const message = await this.getWeeklyMessage(client);
 		if (!message) {
 			console.error("Cant find poll message");
@@ -518,9 +518,6 @@ class Weekly {
 
 	async getWeeklyMessage(client) {
 		try {
-			console.log("this.guildId:"+this.guildId);
-			console.log("this.channelId:"+this.channelId);
-			console.log("this.msgId:"+this.msgId);
 			return await client.guilds.get(this.guildId).channels.get(this.channelId).fetchMessage(this.msgId);
 		} catch (err) {
 			return;
