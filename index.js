@@ -5,7 +5,7 @@ const Weekly = require("./weekly.js");
 const Datastore = require('nedb');
 
 var mysql = require('mysql');
-var con = mysql.createConnection(config.CLEARDB_DATABASE_URL);
+var con = mysql.createPool(config.CLEARDB_DATABASE_URL);
 const client = new Discord.Client();
 const prefix = String("`"+config.prefix+"`");
 
