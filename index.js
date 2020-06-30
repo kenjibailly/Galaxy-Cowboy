@@ -339,7 +339,41 @@ function cleanDatabase() {
 
 client.on("ready", () => {
 	console.log(`Bot logged in as ${client.user.tag}!`);
-	client.user.setActivity(`${config.prefix}help`);
+	var discordActivity = delay =>
+	setTimeout(() => {
+
+		var discordActivityStatus;
+		var discordActivityType;
+
+		switch (delay) {
+			case 1:
+				discordActivityStatus = `${config.prefix}help`;
+				discordActivityType = "WATCHING";
+				break;
+			case 2:
+				discordActivityStatus = `${config.prefix}examples`;
+				discordActivityType = "WATCHING";
+				break;
+			case 3:
+				discordActivityStatus = "Guild Wars 2";
+				discordActivityType = "PLAYING";
+				break;
+			default:
+				discordActivityStatus = "Hey, test me out!";
+				discordActivityType = "LISTENING";
+				break;
+		}
+
+		if (delay > 3) {
+			delay = 0;
+		}
+
+		client.user.setActivity(`${discordActivityStatus}`, { type: discordActivityType});
+		discordActivity(delay +1);
+	}, delay * 5000);
+	discordActivity(1);
+	
+	
 
 	setInterval(finishTimedPolls, 10000); // 10s
 	setInterval(cleanDatabase, 86400000); // 24h
