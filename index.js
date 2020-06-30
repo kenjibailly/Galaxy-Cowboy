@@ -9,6 +9,9 @@ var con = mysql.createPool(config.CLEARDB_DATABASE_URL);
 const client = new Discord.Client();
 const prefix = String("`"+config.prefix+"`");
 
+const client = new Discord.Client();
+const prefix = String("`"+config.prefix+"`");
+
 const commandSyntaxRegex = new RegExp(`^[${config.prefix}]((poll\\s(time=\\d+([smhd]?\\s))?("[^"\\n]+"\\s?){1,11})|(help)|(weekly\\s(time=\\d+([smhd]?\\s))?("[^"\\n]+"\\s?){1,11})|(examples)|(end\\s\\d+)|(invite))$`);
 //const commandSyntaxRegex = new RegExp(`^${config.prefix}\\s(((time=\\d+([smhd]?\\s))?("[^"\\n]+"\\s?){1,11})|(help)|(weekly\\s(time=\\d+([smhd]?\\s))?("[^"\\n]+"\\s?){1,11})|((poll\\s)?("[^"\\n]+"\\s?){1,11})|(examples)|(end\\s\\d+)|(invite))$`);
 //const commandSyntaxRegex = new RegExp(`^${config.prefix}(weekly\\s(time=\\d+([smhd]?\\s+))?(([^\s\\n\]+"\\s?){1,11})?)$`)
@@ -372,8 +375,6 @@ client.on("ready", () => {
 		discordActivity(delay +1);
 	}, delay * 5000);
 	discordActivity(1);
-	
-	
 
 	setInterval(finishTimedPolls, 10000); // 10s
 	setInterval(cleanDatabase, 86400000); // 24h

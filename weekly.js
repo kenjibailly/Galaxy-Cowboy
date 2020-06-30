@@ -2,9 +2,11 @@ const Discord = require("discord.js");
 const hash = require("string-hash");
 const config = process.env;
 const index = require("./index.js");
+
 const numEmojis = ["1⃣", "2⃣", "3⃣", "4⃣", "5⃣", "6⃣", "7⃣", "8⃣", "9⃣", "🔟"];
-const reactEmoji = ["723732274163482673", "723731107471687680", "723732274054561867", "723732274004230175", "723732274012487732", "723732274117476412", "723732273903435827"];
+var reactEmoji = ["723732274163482673", "723731107471687680", "723732274054561867", "723732274004230175", "723732274012487732", "723732274117476412", "723732273903435827"];
 var dayEmoji = ["<:Sunday:723732274163482673>", "<:Monday:723731107471687680>", "<:Tuesday:723732274054561867>", "<:Wednesay:723732274004230175>", "<:Thursday:723732274012487732>", "<:Friday:723732274117476412>", "<:Saturday:723732273903435827>"];
+var reactCountEmoji = ["Sunday:723732274163482673", "Monday:723731107471687680", "Tuesday:723732274054561867", "Wednesday:723732274004230175", "Thursday:723732274012487732", "Friday:723732274117476412", "Saturday:723732273903435827"];
 var days = ["Sunday", "Monday", "Tuesday", "Wednesday", "Thursday", "Friday", "Saturday"];
 var months = ["January", "February", "March", "April", "May", "June", "July", "August", "September", "October", "November", "December"];
 const handEmojis = ["1⃣", "2⃣", "3⃣", "4⃣", "5⃣", "6⃣", "7⃣"];
@@ -183,8 +185,11 @@ class Weekly {
 	async getWeeklyVotes(message) {
 		if (this.hasFinished) {
 			const reactionCollectionWeekly = message.reactions;
+			//console.log(reactionCollectionWeekly);
 			for (let i = 0; i < 7; i++) {
+				//console.log("emojis: "+this.emojis[i]);
 				this.results[i] = reactionCollectionWeekly.get(this.emojis[i]).count - 1;
+				//console.log("results: "+this.results);
 			}
 		} else {
 			throw new Error("Poll not ended");
@@ -450,6 +455,14 @@ class Weekly {
 	}
 
 	generateWeeklyResultsEmbed() {
+		// console.log("dateEmojiReactCollection: "+ dateEmojiReactCollection);
+		// console.log("this.id: "+this.id);
+		// con.query("SELECT emojis FROM polls WHERE id = '"+this.id+"'", function (err, dbp, fields) {
+		// 	  if (err) throw err;
+		// 	  console.log("dbp: "+dbp);
+		// 	  var reactionEmojiSorted = dbp.split(',');
+		// 	  this.emoji = reactionEmojiSorted;
+			
 		let description = new String();
 		let totalVotes = 0;
 
@@ -475,7 +488,7 @@ class Weekly {
 		}
 
 		finalResults.forEach((r) => {
-			description += `${r.emoji} :: ** ${r.votes} ** :: ${r.percentage}% \n`;
+			description += `<:${r.emoji}> - ** ${r.votes} ** - ${r.percentage}% \n`;
 		});
 
 		let footer = `Results from poll ${this.id} finished on ${new Date(this.finishTime).toUTCString()}`;
@@ -484,6 +497,7 @@ class Weekly {
 			.setDescription(description)
 			.setFooter(footer)
 			.setColor("#0080FF");
+		// });
 
 		return weeklyResultsEmbed;
 	}
@@ -508,9 +522,9 @@ class Weekly {
 	getEmojis(type) {
 		switch (type) {
 			case "yn":
-				return handEmojis;
+				return reactCountEmoji;
 			case "default":
-				return numEmojis;
+				return reactCountEmoji;
 			default:
 				throw new Error("The poll type is not known");
 		}
