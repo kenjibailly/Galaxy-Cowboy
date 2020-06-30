@@ -6,8 +6,6 @@ const Datastore = require('nedb');
 
 var mysql = require('mysql');
 var con = mysql.createPool(config.CLEARDB_DATABASE_URL);
-const client = new Discord.Client();
-const prefix = String("`"+config.prefix+"`");
 
 const client = new Discord.Client();
 const prefix = String("`"+config.prefix+"`");
