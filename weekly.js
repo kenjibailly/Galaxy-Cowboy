@@ -63,10 +63,10 @@ class Weekly {
 		return w;
 	}
 	async start(msg) {
-		function incrementDate(dateInput,increment) {
-			var dateFormatTotime = new Date(dateInput);
-			var increasedDate = new Date(dateFormatTotime.getTime() +(increment *86400000));
-			return increasedDate;
+		let date1 = new Date();
+		if (this.startDate == 0 || this.startDate.length === 0 || this.startDate == null) {
+			this.startDate = convertDateFormat(this.incrementDate(date1,0));
+			console.log("startdatelaunched: "+this.startDate);
 		}
 		function convertDateFormat(date) {
 			var Xmas95 = new Date(date);
@@ -82,12 +82,8 @@ class Weekly {
 			var convertedDateFormat = `${zaR}-${zaMth}-${zaDs}`;
 			return convertedDateFormat;
 		}
-		let date1 = new Date();
-		if (this.startDate == 0) {
-			this.startDate = convertDateFormat(incrementDate(date1,0));
-		}
 		if (this.endDate == 0) {
-			this.endDate = convertDateFormat(incrementDate(this.startDate,7));
+			this.endDate = convertDateFormat(this.incrementDate(this.startDate,7));
 		}
 		let date2 = new Date(this.endDate);
 		let dateTimeRange = date2.getTime() - date1.getTime();		
@@ -117,6 +113,11 @@ class Weekly {
 			}
 		} 
 		return message.id;
+	}
+	incrementDate(dateInput,increment) {
+		var dateFormatTotime = new Date(dateInput);
+		var increasedDate = new Date(dateFormatTotime.getTime() +(increment *86400000));
+		return increasedDate;
 	}
 	async finish(client) {
 		const now = new Date();
@@ -209,11 +210,6 @@ class Weekly {
         var convertedDateFormat = `${zaR}-${zaMth}-${zaDs}`;
         return convertedDateFormat;
     }
-    incrementDate(dateInput,increment) {
-        var dateFormatTotime = new Date(dateInput);
-        var increasedDate = new Date(dateFormatTotime.getTime() +(increment *86400000));
-        return increasedDate;
-    }
     convertDayDate(date) {
         var Xmas95 = new Date(date);
         var weekday = Xmas95.getDay();
@@ -239,17 +235,21 @@ class Weekly {
         zaMth = za.getMonth() + 1,
         zaDs = za.getDate(),
         zaTm = za.toTimeString().substr(0,5);
-        var convertedDateFormat = `${zaDs}.${zaMth}.${zaR}`;
+		var convertedDateFormat = `${zaDs}.${zaMth}.${zaR}`;
         return convertedDateFormat;
 	}
 	getCurrentDateTime() {
 		let dateTime;
 		if (this.startDate !== undefined) {
-			dateTime = new Date();
+			dateTime = this.startDate;
+			console.log("hier1");
+			console.log("this.startDate: "+this.startDate);
 		} else {
+			console.log("hier2");
 			dateTime = new Date();
 			this.startDate = this.convertDateFormatBack(dateTime);
 		}
+		console.log("dateTime: "+dateTime);
 		return dateTime;
 	}
 	getPositionStart(current_datetime, dateFormatOne){
@@ -360,6 +360,25 @@ class Weekly {
 		return stringCountEmojiCollection;
 	}
 	getReactCountEmojiCollection() {
+		let date1 = new Date();
+		if (this.startDate == 0 || this.startDate.length === 0 || this.startDate == null) {
+			this.startDate = convertDateFormat(this.incrementDate(date1,0));
+			console.log("startdatelaunched: "+this.startDate);
+		}
+		function convertDateFormat(date) {
+			var Xmas95 = new Date(date);
+			var weekday = Xmas95.getDay();
+			var options = { weekday: 'long'};
+			var dayDate = new Intl.DateTimeFormat('en-US', options).format(Xmas95);
+			var newDate = new Date(date);
+			let za = new Date(newDate),
+    		zaR = za.getFullYear(),
+    		zaMth = za.getMonth() + 1,
+    		zaDs = za.getDate(),
+    		zaTm = za.toTimeString().substr(0,5);
+			var convertedDateFormat = `${zaR}-${zaMth}-${zaDs}`;
+			return convertedDateFormat;
+		}
 		current_datetime = this.getCurrentDateTime();
 		dateFormatOne = this.convertDayDate(current_datetime);
 		positionStart = this.getPositionStart(current_datetime, dateFormatOne);
