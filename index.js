@@ -24,7 +24,7 @@ const helpEmbed = new Discord.RichEmbed()
 	.addField("See examples", `\`${config.prefix} examples\``)
 	.addBlankField()
 	.addField("About", "The bot has been created by Zep, leader and founder of Galaxy Cowboys. Feel free to report bugs.")
-	.setFooter("Credits to Zheoni for being able to use the source code of [here](http:
+	.setFooter("Credits to Zheoni for being able to use the source code of [here](http://github.com/Zheoni/VotaBot) and make this happen", 'attachment://zep.jpg')
 	.setColor("#DDA0DD");
 const examplesEmbed = new Discord.RichEmbed()
 	.setTitle("Examples of VotaBot's commands")
@@ -41,7 +41,7 @@ const examplesEmbed = new Discord.RichEmbed()
 	.addField("See the results of a poll", `\`${config.prefix}poll end 61342378\``)
 	.addBlankField()
 	.attachFiles(['./assets/zep.jpg'])
-	.setFooter("The bot has been created by Zep, leader and founder of Galaxy Cowboys.\nFeel free to report bugs.", 'attachment:
+	.setFooter("The bot has been created by Zep, leader and founder of Galaxy Cowboys.\nFeel free to report bugs.", 'attachment://zep.jpg')
 	.setColor("#DDA0DD");
 const weeklyEmbed = new Discord.RichEmbed()
 	.setAuthor("Galaxy Zep")
@@ -94,6 +94,7 @@ async function poll(msg, args) {
 	await p.start(msg);
 	if (p.hasFinished == false) {
 		database.insert(p);
+		// maybe we can get a duplicated id...
 	}
 }
 async function weekly(msg, args) {
@@ -203,7 +204,7 @@ function parseTime(msg, args) {
 			default: time *= 60000;
 		}
 	}
-	if (time > 604800000) return 604800000; 
+	if (time > 604800000) return 604800000;
 	else return time;
 }
 function parseToArgs(msg) {
@@ -273,9 +274,9 @@ client.on("ready", () => {
 		discordActivity(delay +1);
 	}, delay * 5000);
 	discordActivity(1);
-	setInterval(finishTimedPolls, 10000); 
-	setInterval(cleanDatabase, 86400000); 
-	setInterval(() => console.log("The bot is in " + client.guilds.size + " guild(s)"), 1800000); 
+	setInterval(finishTimedPolls, 10000);
+	setInterval(cleanDatabase, 86400000);
+	setInterval(() => console.log("The bot is in " + client.guilds.size + " guild(s)"), 1800000); // logging info
 });
 client.on("message", async (msg) => {
 	if (msg.content.startsWith(config.prefix) && !msg.author.bot) {
@@ -339,6 +340,7 @@ client.on("message", async (msg) => {
 						break;
 				}
 			} else {
+				//msg.reply("Sorry, give me more at least a question");
 			}
 		} else msg.reply(`Wrong command syntax. Learn how to do it correctly with \`${config.prefix}help\``);
 	}
