@@ -246,13 +246,10 @@ class Weekly {
 		let dateTime;
 		if (this.startDate !== undefined) {
 			dateTime = new Date();
-			console.log("hier");
 		} else {
 			dateTime = new Date();
 			this.startDate = this.convertDateFormatBack(dateTime);
 		}
-		console.log("this.startDate: "+this.startDate);
-		console.log("dateTime: "+dateTime);
 		return dateTime;
 	}
 	getPositionStart(current_datetime, dateFormatOne){
@@ -364,7 +361,6 @@ class Weekly {
 	}
 	getReactCountEmojiCollection() {
 		current_datetime = this.getCurrentDateTime();
-		console.log("current_datetime: "+current_datetime);
 		dateFormatOne = this.convertDayDate(current_datetime);
 		positionStart = this.getPositionStart(current_datetime, dateFormatOne);
 		position = positionStart -1;
