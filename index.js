@@ -3,23 +3,15 @@ const config = process.env;
 const Poll = require("./poll.js");
 const Weekly = require("./weekly.js");
 const Datastore = require('nedb');
-
 var mysql = require('mysql');
 var con = mysql.createPool(config.CLEARDB_DATABASE_URL);
-
 const client = new Discord.Client();
 const prefix = String("`"+config.prefix+"`");
-
 const commandSyntaxRegex = new RegExp(`^[${config.prefix}]((poll\\s(time=\\d+([smhd]?\\s))?("[^"\\n]+"\\s?){1,11})|(help)|(weekly\\s(time=\\d+([smhd]?\\s))?("[^"\\n]+"\\s?){1,11})|(examples)|(end\\s\\d+)|(invite))$`);
-//const commandSyntaxRegex = new RegExp(`^${config.prefix}\\s(((time=\\d+([smhd]?\\s))?("[^"\\n]+"\\s?){1,11})|(help)|(weekly\\s(time=\\d+([smhd]?\\s))?("[^"\\n]+"\\s?){1,11})|((poll\\s)?("[^"\\n]+"\\s?){1,11})|(examples)|(end\\s\\d+)|(invite))$`);
-//const commandSyntaxRegex = new RegExp(`^${config.prefix}(weekly\\s(time=\\d+([smhd]?\\s+))?(([^\s\\n\]+"\\s?){1,11})?)$`)
-
-
-// two pre-generated embeds
 const helpEmbed = new Discord.RichEmbed()
 	.setTitle("Galaxy Cowboys's Commands")
 	.attachFiles(['./assets/zep.jpg', './assets/osalien.jpg'])
-	.setThumbnail("attachment://osalien.jpg")
+	.setThumbnail("attachment:
 	.addBlankField()
 	.addField("Create Weekly Poll", `\`${config.prefix}weekly "Title" "Starting Date" "Ending Date"\``+"\nFormat: YYYY-MM-DD format\ndates are optional fields, default starts today, ends in 7 days")
 	.addField("Create Weekly Custom Poll", `\`${config.prefix} After weekly "Title" "start date" "end date" you can put "Custom Description"\``)
@@ -32,20 +24,12 @@ const helpEmbed = new Discord.RichEmbed()
 	.addField("See examples", `\`${config.prefix} examples\``)
 	.addBlankField()
 	.addField("About", "The bot has been created by Zep, leader and founder of Galaxy Cowboys. Feel free to report bugs.")
-	.setFooter("Credits to Zheoni for being able to use the source code of [here](http://github.com/Zheoni/VotaBot) and make this happen", 'attachment://zep.jpg')
+	.setFooter("Credits to Zheoni for being able to use the source code of [here](http:
 	.setColor("#DDA0DD");
-
-// const Message = `**Things to know**.
-// -Only administrators or people with a role named "Poll Creator" can interact with me.
-// -Polls are only stored for a week, you can't retrieve the results from an older poll (also applies to timed polls).
-// -If for some unlucky reason the bot restarts, in the current version you won't have the option of finishing any poll created before.
-// -Use " not two '.
-// -There is a 10 seconds max error for timed polls.`;
-
 const examplesEmbed = new Discord.RichEmbed()
 	.setTitle("Examples of VotaBot's commands")
 	.attachFiles(['./assets/zep.jpg', './assets/osalien.jpg'])
-	.setThumbnail("attachment://osalien.jpg")
+	.setThumbnail("attachment:
 	.addBlankField()
 	.addField("Weekly Poll", `\`${config.prefix}weekly "Title" "2020-06-22" "2020-06-28"\``)
 	.addField("Custom Weekly Poll", `\`${config.prefix}weekly "Title" "2020-06-22" "2020-06-28" "Custom Description"\``)
@@ -57,10 +41,8 @@ const examplesEmbed = new Discord.RichEmbed()
 	.addField("See the results of a poll", `\`${config.prefix}poll end 61342378\``)
 	.addBlankField()
 	.attachFiles(['./assets/zep.jpg'])
-	.setFooter("The bot has been created by Zep, leader and founder of Galaxy Cowboys.\nFeel free to report bugs.", 'attachment://zep.jpg')
+	.setFooter("The bot has been created by Zep, leader and founder of Galaxy Cowboys.\nFeel free to report bugs.", 'attachment:
 	.setColor("#DDA0DD");
-
-
 const weeklyEmbed = new Discord.RichEmbed()
 	.setAuthor("Galaxy Zep")
 	.setDescription("<:Monday:723595665325948929>"+"Monday")
@@ -68,17 +50,13 @@ const weeklyEmbed = new Discord.RichEmbed()
 	.addField(":Wednesday:", `\`Wednesday\``)
 	.addField(":Thursday:", `\`Thursday\``)
 	.setColor("#DDA0DD");
-
 let database = new Datastore('database.db');
 database.loadDatabase();
 database.persistence.setAutocompactionInterval(3600000);
-
-
 async function finishTimedPolls() {
 	const now = Date.now()
 	database.find({ isTimed: true, finishTime: { $lte: now } }, (err, dbps) => {
 		if (err) console.error(err);
-
 		dbps.forEach((dbp) => {
 			const p = Poll.copyConstructor(dbp);
 			const w = Weekly.copyConstructor(dbp);
@@ -86,7 +64,6 @@ async function finishTimedPolls() {
 				p.finish(client);
 				database.remove({ id: p.id });
 			}
-
 			if (w instanceof Weekly && w.isTimed && w.finishTime <= now) {
 				w.finish(client);
 				database.remove({ id: w.id });
@@ -94,13 +71,11 @@ async function finishTimedPolls() {
 		});
 	});
 }
-
 async function poll(msg, args) {
 	const timeToVote = await parseTime(msg, args);
 	const question = args[1];
 	let answers = [];
 	let type;
-
 	switch (args.length) {
 		case 0:
 			msg.reply("You cannot create a poll with no question");
@@ -114,61 +89,43 @@ async function poll(msg, args) {
 			type = "default";
 			break;
 	}
-
-	//console.log("type: "+type);
 	args.splice(0,2);
 	const p = await new Poll(msg, question, answers, timeToVote, type);
-
 	await p.start(msg);
-
 	if (p.hasFinished == false) {
 		database.insert(p);
-		// maybe we can get a duplicated id...
 	}
 }
-
 async function weekly(msg, args) {
 	var question = args[1];
 	let endDate = [];
 	let startDate = [];
-	let weeklyType;
+	let weeklyType = "";
 	let weeklyDescription = String("When are you available? Let us know!");
-	
-
 	if (args[1].includes("time")) {
 		var argsSpliced = args.slice(2,args.length);
-
 		if (argsSpliced[4]) {
 			var argsSpliced = args.slice(2,args.length);
 			weeklyType = argsSpliced[4];
 		 }
-		
 		var question = argsSpliced[0];
 	} else {
 		var argsSpliced = args.slice(1,args.length);
 		if (argsSpliced[4]) {
-			//console.log("argsspliced: "+argsSpliced);
 			weeklyType = argsSpliced[4];
 		 }
 	}
-
-
 	if (argsSpliced.length >= 2) {
 		startDate = argsSpliced[1];
 	}
-
 	if (argsSpliced.length >= 3) {
 		endDate = argsSpliced[2];
 	}
-
 	if (argsSpliced.length >= 4){
 		weeklyDescription = argsSpliced[3];
 	} 
-
-	
 	let answers = [];
 	let type;
-
 	switch (args.length) {
 		case 0:
 			msg.reply("You cannot create a poll without a question");
@@ -179,99 +136,61 @@ async function weekly(msg, args) {
 			break;
 		default:
 			answers = args;
-			//type = "default";
 			type = "yn";
 			break;
 	}
-
 	let timeToVote = await parseTime(msg, args);
-
 	const w = await new Weekly(msg, question, startDate, endDate, weeklyDescription, weeklyType, answers, timeToVote, type);
 	await w.start(msg);
-
 	if (w.hasFinished == false) {
-		//database.insert(w);
-		
-			//console.log("weeklyDescription: "+weeklyDescription);
-			// if (err) throw err;
-			//console.log("Connected!");
-			//console.log(w);
+			w.emojis = (await w.emojis).toString();
 			var insertValues = w.id+"', '"+w.guildId+"', '"+w.channelId+"', '"+w.msgId+"', '"+w.question+"', '"+w.startDate+"', '"+w.endDate+"', '"+w.weeklyDescription+"', '"+w.answers+"', '"+w.createdOn+"', '"+w.isTimed+"', '"+w.hasFinished+"', '"+w.finishTime+"', '"+w.type+"', '"+w.emojis+"', '"+w.results;
-			//console.log("insertValues: "+insertValues);
 			var sql = "INSERT INTO polls (id, guildId, channelId, msgId, question, startDate, endDate, weeklyDescription, answers, createdOn, isTimed, hasFinished, finishTime, type, emojis, results) VALUES ('"+insertValues+"')";
 			con.query(sql, function (err, result) {
 			  if (err) throw err;
 			  console.log("1 record inserted");
 			});
-
-
-		//console.log("w: "+JSON.stringify(w));
-		//console.log("w.guildId"+w.guildId);
-		// maybe we can get a duplicated id...
 	}
 }
-
-
-
 async function end(msg, args) {
 	const inputid = Number(args[1]);
-	 // finish event make it red
 	var w;
 	con.query("SELECT * FROM polls WHERE id = '"+inputid+"'", function (err, dbp, fields) {
 		  if (err) throw err;
-		  //const w = Weekly.copyConstructor(dbp);
-
-		  //console.log("dbp :");
-		  //console.log(dbp[0]);
 		  w = Weekly.copyConstructor(dbp[0]);
 		  w.answers = w.answers.split(',');
 		  w.emojis = w.emojis.split(',');
 		  w.results = w.results.split(',');
 		  w.hasFinished = false;
-		//   console.log(w);
-		//console.log("args: "+args[1]);
 			if (w) {
-					//console.log(client);
 					w.finish(client);
 					var sql = "DELETE FROM polls WHERE id = '"+w.id+"'";
 					con.query(sql, function (err, result) {
 					  if (err) throw err;
 					  console.log("Number of records deleted: " + result.affectedRows);
-					  msg.reply("Poll "+w.id+" deleted.");
 					});
-					
 		} else {
 				msg.reply("Cannot find the poll.");
 			}
 		});
 }
-
 function parseTime(msg, args) {
 	let time = 0;
-
-	//parse the time limit if it exists
 	if (args[1].startsWith("time=")) {
 		const timeRegex = /\d+/;
 		const unitRegex = /s|m|h|d/i;
 		let timeString = args[1];
 		let unit = "s";
-
 		let match;
-
-		// check if the time is correct
 		match = timeString.match(timeRegex);
 		if (match != null) {
 			time = parseInt(match.shift());
-			//console.log("check time: "+time);
 		} else {
 			msg.reply("Wrong time syntax!");
 			return;
 		}
-
-		// check the units of the time
 		match = timeString.split("=").pop().match(unitRegex);
 		if (match != null) unit = match.shift();
-
 		switch (unit) {
 			case "s": time *= 1000;
 				break;
@@ -284,68 +203,51 @@ function parseTime(msg, args) {
 			default: time *= 60000;
 		}
 	}
-	if (time > 604800000) return 604800000; // no more than a week.
+	if (time > 604800000) return 604800000; 
 	else return time;
 }
-
 function parseToArgs(msg) {
 	let args = msg.content.slice(config.prefix.length)
 		.trim()
 		.split("\"")
 		.filter((phrase) => phrase.trim() !== "");
-		
 	if (args[0].startsWith("weekly")) {
-		
 		if (args.length == 4) {
 			startDate = args[3];
 		}
-	
 		if (args.length == 5) {
 			endDate = args[4];
 		}
-
 		if (args.length == 6){
 			weeklyDescription = args[5];
 		} 
-
 		args[0] = args[0].trim();
 		let aux = args[0];
 		aux = aux.split(" ");
-
 	} else 	if (args[0].startsWith("end")) {
 		let aux = args[0].split(" ");
 		args[0] = aux[0];
 		args.push(aux[1]);
 	}
-
 	if (args[0].includes("time") || args[0].includes("no date")) {
 		let aux = args[0].trim();
 		aux = aux.split(" ");
 		args.shift();
 		args.unshift(aux[0], aux[1]);
-
 	}
-
-	
-
-
 	return args;
 }
-
 function cleanDatabase() {
 	console.log("Cleaning the database...");
 	const aWeekAgo = Date.now() - 604800000;
 	database.remove({ createdOn: { $lt: aWeekAgo } }, { multi: true }, (err, n) => console.log(n + " entries removed."));
 }
-
 client.on("ready", () => {
 	console.log(`Bot logged in as ${client.user.tag}!`);
 	var discordActivity = delay =>
 	setTimeout(() => {
-
 		var discordActivityStatus;
 		var discordActivityType;
-
 		switch (delay) {
 			case 1:
 				discordActivityStatus = `${config.prefix}help`;
@@ -364,25 +266,19 @@ client.on("ready", () => {
 				discordActivityType = "LISTENING";
 				break;
 		}
-
 		if (delay > 3) {
 			delay = 0;
 		}
-
 		client.user.setActivity(`${discordActivityStatus}`, { type: discordActivityType});
 		discordActivity(delay +1);
 	}, delay * 5000);
 	discordActivity(1);
-
-	setInterval(finishTimedPolls, 10000); // 10s
-	setInterval(cleanDatabase, 86400000); // 24h
-
-	setInterval(() => console.log("The bot is in " + client.guilds.size + " guild(s)"), 1800000); // logging info
+	setInterval(finishTimedPolls, 10000); 
+	setInterval(cleanDatabase, 86400000); 
+	setInterval(() => console.log("The bot is in " + client.guilds.size + " guild(s)"), 1800000); 
 });
-
 client.on("message", async (msg) => {
 	if (msg.content.startsWith(config.prefix) && !msg.author.bot) {
-		// if its a guild, check permissions
 		let isDM = false, dmChannel;
 		if (msg.channel.type === "text" || msg.channel.type === "news") {
 			let role;
@@ -393,8 +289,6 @@ client.on("message", async (msg) => {
 			} catch (error) {
 				console.error(error);
 			}
-
-			//if (!(msg.member.hasPermission("ADMINISTRATOR") || msg.member.roles.has(roleid))) {
 			if (!(msg.member.hasPermission("SEND_MESSAGES") || msg.member.roles.has(roleid))) {
 				msg.reply("You don't have permision to do that. Only administrators or users with a role named \"Poll Creator\"");
 				console.log(`${msg.author.tag} on ${msg.guild.name} tried to create a poll without permission"`);
@@ -403,35 +297,27 @@ client.on("message", async (msg) => {
 		} else {
 			isDM = true;
 		}
-
 		if (msg.content.match(commandSyntaxRegex)) {
-			//console.log("args[0]: "+args[0]);
 			let args = parseToArgs(msg);
 			if (args.length > 0) {
-				//msg.reply(`${args[0]} executed in ${msg.guild ? msg.guild.name : (msg.author.username + "'s DMs")} by ${msg.author.tag}`);
 				args[0] = String(args[0]);
-				
 				switch (args[0]) {
 					case "help":
 						dmChannel = await msg.author.createDM();
 						await dmChannel.send({ embed: helpEmbed });
-						//dmChannel.send(helpMessage);
 						break;
 					case "examples":
 						dmChannel = await msg.author.createDM();
 						dmChannel.send({ embed: examplesEmbed });
 						break;
 					case "weekly":
-						//console.log("weekly happened");
 						if (!isDM) {
 							weekly(msg, args);
 						}
-					//msg.reply("weekly");
 					break;
 					case "end":
 						if (!isDM) {
 							end(msg, args);
-							//msg.reply("end");
 						}
 						break;
 					case "invite":
@@ -447,25 +333,15 @@ client.on("message", async (msg) => {
 						}
 						break;
 					default:
-						//msg.reply("default");
-						//msg.reply("msg "+msg);
-						//msg.reply(`${args[1]}`);
 						if (!isDM) {
 							poll(msg, args);
 						}
-						//console.log("default happened");
 						break;
 				}
 			} else {
-				//msg.reply("Sorry, give me more at least a question");
 			}
 		} else msg.reply(`Wrong command syntax. Learn how to do it correctly with \`${config.prefix}help\``);
-		
-	
-		
 	}
 });
-
 client.on("error", console.error);
-
 client.login(config.TOKEN).then((token) => console.log("Logged in successfully")).catch(console.error);
