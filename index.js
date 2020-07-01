@@ -11,7 +11,7 @@ const commandSyntaxRegex = new RegExp(`^[${config.prefix}]((poll\\s(time=\\d+([s
 const helpEmbed = new Discord.RichEmbed()
 	.setTitle("Galaxy Cowboys's Commands")
 	.attachFiles(['./assets/zep.jpg', './assets/osalien.jpg'])
-	.setThumbnail("attachment:
+	.setThumbnail("attachment://osalien.jpg")
 	.addBlankField()
 	.addField("Create Weekly Poll", `\`${config.prefix}weekly "Title" "Starting Date" "Ending Date"\``+"\nFormat: YYYY-MM-DD format\ndates are optional fields, default starts today, ends in 7 days")
 	.addField("Create Weekly Custom Poll", `\`${config.prefix} After weekly "Title" "start date" "end date" you can put "Custom Description"\``)
@@ -29,7 +29,7 @@ const helpEmbed = new Discord.RichEmbed()
 const examplesEmbed = new Discord.RichEmbed()
 	.setTitle("Examples of VotaBot's commands")
 	.attachFiles(['./assets/zep.jpg', './assets/osalien.jpg'])
-	.setThumbnail("attachment:
+	.setThumbnail("attachment://osalien.jpg")
 	.addBlankField()
 	.addField("Weekly Poll", `\`${config.prefix}weekly "Title" "2020-06-22" "2020-06-28"\``)
 	.addField("Custom Weekly Poll", `\`${config.prefix}weekly "Title" "2020-06-22" "2020-06-28" "Custom Description"\``)
