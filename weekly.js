@@ -66,7 +66,6 @@ class Weekly {
 		let date1 = new Date();
 		if (this.startDate == 0 || this.startDate.length === 0 || this.startDate == null) {
 			this.startDate = convertDateFormat(this.incrementDate(date1,0));
-			console.log("startdatelaunched: "+this.startDate);
 		}
 		function convertDateFormat(date) {
 			var Xmas95 = new Date(date);
@@ -242,14 +241,10 @@ class Weekly {
 		let dateTime;
 		if (this.startDate !== undefined) {
 			dateTime = this.startDate;
-			console.log("hier1");
-			console.log("this.startDate: "+this.startDate);
 		} else {
-			console.log("hier2");
 			dateTime = new Date();
 			this.startDate = this.convertDateFormatBack(dateTime);
 		}
-		console.log("dateTime: "+dateTime);
 		return dateTime;
 	}
 	getPositionStart(current_datetime, dateFormatOne){
@@ -363,7 +358,6 @@ class Weekly {
 		let date1 = new Date();
 		if (this.startDate == 0 || this.startDate.length === 0 || this.startDate == null) {
 			this.startDate = convertDateFormat(this.incrementDate(date1,0));
-			console.log("startdatelaunched: "+this.startDate);
 		}
 		function convertDateFormat(date) {
 			var Xmas95 = new Date(date);
