@@ -66,7 +66,6 @@ class Weekly {
 		let date1 = new Date();
 		if (this.startDate == 0 || this.startDate.length === 0 || this.startDate == null) {
 			this.startDate = convertDateFormat(this.incrementDate(date1,0));
-			console.log("startdatelaunched: "+this.startDate);
 		}
 		function convertDateFormat(date) {
 			var Xmas95 = new Date(date);
@@ -357,14 +356,13 @@ class Weekly {
 	}
 	async getEmojis(type) {
 		reactCountEmojiCollection = this.getReactCountEmojiCollection();
-		console.log("reactCountEmojiCollection: "+reactCountEmojiCollection);
 		var stringCountEmojiCollection = reactCountEmojiCollection.toString();
 		return stringCountEmojiCollection;
 	}
 	getReactCountEmojiCollection() {
 		let date1 = new Date();
 		if (this.startDate == 0 || this.startDate.length === 0 || this.startDate == null) {
-			this.startDate = convertDateFormat(incrementDate(date1,0));
+			this.startDate = convertDateFormat(this.incrementDate(date1,0));
 		}
 		if (this.endDate == 0) {
 			this.endDate = convertDateFormat(this.incrementDate(this.startDate,7));

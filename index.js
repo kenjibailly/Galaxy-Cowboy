@@ -73,7 +73,6 @@ async function finishTimedPolls() {
 	});
 }
 async function poll(msg, args) {
-	console.log("poll executed");
 	const timeToVote = await parseTime(msg, args);
 	const question = args[1];
 	let answers = [];
@@ -304,7 +303,6 @@ client.on("message", async (msg) => {
 		const command = msg.content.slice(config.prefix.length);
 		let args = parseToArgs(msg);
 		var words = ["help", "poll ", "weekly", "examples", "end", "invite"];
-		console.log("args: "+args[0]);
 		if(words.includes(args[0])) {
 			console.log(args[0]);
 		if (commandSyntaxRegex.test(command)) {
@@ -339,7 +337,6 @@ client.on("message", async (msg) => {
 						}
 						break;
 					case "poll ":
-						console.log("poll here");
 						if (!isDM) {
 							poll(msg, args);
 						}
@@ -347,9 +344,6 @@ client.on("message", async (msg) => {
 						break;
 					default:
 						msg.reply(`What did you try? Learn how to do it correctly with \`${config.prefix}help\``);
-						if (!isDM) {
-							poll(msg, args);
-						}
 						break;
 				}
 			} else {
