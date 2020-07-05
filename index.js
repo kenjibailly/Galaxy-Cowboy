@@ -7,7 +7,8 @@ var mysql = require('mysql');
 var con = mysql.createPool(config.CLEARDB_DATABASE_URL);
 const client = new Discord.Client();
 const prefix = String("`"+config.prefix+"`");
-const commandSyntaxRegex = new RegExp(`^[${config.prefix}]((poll\\s(time=\\d+([smhd]?\\s))?("[^"\\n]+"\\s?){1,11})|(help)|(weekly\\s(time=\\d+([smhd]?\\s))?("[^"\\n]+"\\s?){1,11})|(examples)|(end\\s\\d+)|(invite))$`);
+const commandSyntaxRegex = /(help)|(poll\s(time=\d+([smhd]?\s))?("[^"\n]+"\s?){1,11})|(weekly\s(time=\d+([smhd]?\s))?("[^"\n]+"\s?){1,11})|(examples)|(end\s\d+)|(invite)$/;
+const prefixSyntaxRegex = new RegExp(`^[${config.prefix}]`);
 const helpEmbed = new Discord.RichEmbed()
 	.setTitle("Galaxy Cowboys's Commands")
 	.attachFiles(['./assets/zep.jpg', './assets/osalien.jpg'])
@@ -72,6 +73,7 @@ async function finishTimedPolls() {
 	});
 }
 async function poll(msg, args) {
+	console.log("poll executed");
 	const timeToVote = await parseTime(msg, args);
 	const question = args[1];
 	let answers = [];
@@ -298,10 +300,18 @@ client.on("message", async (msg) => {
 		} else {
 			isDM = true;
 		}
-		if (msg.content.match(commandSyntaxRegex)) {
-			let args = parseToArgs(msg);
+	if(msg.content.startsWith(config.prefix) && msg.content !== config.prefix){
+		const command = msg.content.slice(config.prefix.length);
+		let args = parseToArgs(msg);
+		var words = ["help", "poll ", "weekly", "examples", "end", "invite"];
+		console.log("args: "+args[0]);
+		if(words.includes(args[0])) {
+			console.log(args[0]);
+		if (commandSyntaxRegex.test(command)) {
+			
 			if (args.length > 0) {
 				args[0] = String(args[0]);
+				
 				switch (args[0]) {
 					case "help":
 						dmChannel = await msg.author.createDM();
@@ -328,21 +338,28 @@ client.on("message", async (msg) => {
 							msg.reply("The link is not available in this moment.");
 						}
 						break;
-					case "poll":
+					case "poll ":
+						console.log("poll here");
 						if (!isDM) {
 							poll(msg, args);
 						}
+						
 						break;
 					default:
+						msg.reply(`What did you try? Learn how to do it correctly with \`${config.prefix}help\``);
 						if (!isDM) {
 							poll(msg, args);
 						}
 						break;
 				}
 			} else {
-				//msg.reply("Sorry, give me more at least a question");
+				msg.reply(`Something went wrong. Learn how to do it correctly with \`${config.prefix}help\``);
 			}
-		} else msg.reply(`Wrong command syntax. Learn how to do it correctly with \`${config.prefix}help\``);
+		} else {
+			msg.reply(`Wrong command syntax. Learn how to do it correctly with \`${config.prefix}help\``);
+		}
+	}
+	} 
 	}
 });
 client.on("error", console.error);
