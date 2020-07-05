@@ -82,6 +82,9 @@ async function poll(msg, args) {
 			msg.reply("You cannot create a poll with no question");
 			return;
 		case 1:
+			console.log("case 1 triggered in poll");
+			break;
+		case 2:
 			answers = ["", ""];
 			type = "yn";
 			break;
@@ -304,7 +307,6 @@ client.on("message", async (msg) => {
 		let args = parseToArgs(msg);
 		var words = ["help", "poll ", "weekly", "examples", "end", "invite"];
 		if(words.includes(args[0])) {
-			console.log(args[0]);
 		if (commandSyntaxRegex.test(command)) {
 			
 			if (args.length > 0) {
@@ -344,6 +346,9 @@ client.on("message", async (msg) => {
 						break;
 					default:
 						msg.reply(`What did you try? Learn how to do it correctly with \`${config.prefix}help\``);
+						if (!isDM) {
+							poll(msg, args);
+						}
 						break;
 				}
 			} else {
