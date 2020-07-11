@@ -9,6 +9,7 @@ const client = new Discord.Client();
 const prefix = String("`"+config.prefix+"`");
 const commandSyntaxRegex = /(help)|(poll\s(time=\d+([smhd]?\s))?("[^"\n]+"\s?){1,11})|(weekly\s(time=\d+([smhd]?\s))?("[^"\n]+"\s?){1,11})|(examples)|(end\s\d+)|(invite)$/;
 const prefixSyntaxRegex = new RegExp(`^[${config.prefix}]`);
+var timed = false;
 const helpEmbed = new Discord.RichEmbed()
 	.setTitle("Galaxy Cowboys's Commands")
 	.attachFiles(['./assets/zep.jpg', './assets/osalien.jpg'])
@@ -54,22 +55,43 @@ const weeklyEmbed = new Discord.RichEmbed()
 let database = new Datastore('database.db');
 database.loadDatabase();
 database.persistence.setAutocompactionInterval(3600000);
+
 async function finishTimedPolls() {
-	const now = Date.now()
-	database.find({ isTimed: true, finishTime: { $lte: now } }, (err, dbps) => {
-		if (err) console.error(err);
-		dbps.forEach((dbp) => {
-			const p = Poll.copyConstructor(dbp);
-			const w = Weekly.copyConstructor(dbp);
-			if (p instanceof Poll && p.isTimed && p.finishTime <= now) {
-				p.finish(client);
-				database.remove({ id: p.id });
-			}
+
+	con.query("SELECT * FROM polls WHERE isTimed = 'true'", function (err, db, fields) {
+		if (err) throw err;
+	
+	let now = Date.now()
+	//database.find({ isTimed: true, finishTime: { $lte: now } }, (err, dbps) => {
+		//if (err) console.error(err);
+		//console.log(db);
+		db.forEach((dbp) => {
+			let p = Poll.copyConstructor(dbp);
+			let w = Weekly.copyConstructor(dbp);
+			// if (p instanceof Poll && p.isTimed && p.finishTime <= now) {
+			// 	p.finish(client);
+			// 	database.remove({ id: p.id });
+			// }
 			if (w instanceof Weekly && w.isTimed && w.finishTime <= now) {
-				w.finish(client);
-				database.remove({ id: w.id });
+				w.answers = w.answers.split(',');
+				w.emojis = w.emojis.split(',');
+				w.results = w.results.split(',');
+				w.hasFinished = false;
+				  if (w) {
+						  w.finish(client);
+						  var sql = "DELETE FROM polls WHERE id = '"+w.id+"'";
+						  con.query(sql, function (err, result) {
+							if (err) throw err;
+							console.log("Number of records deleted: " + result.affectedRows);
+						  });
+			  } else {
+					  msg.reply("Cannot find the poll.");
+				  }
+				//w.finish(client);
+				//database.remove({ id: w.id });
 			}
 		});
+	// });
 	});
 }
 async function poll(msg, args) {
@@ -145,9 +167,12 @@ async function weekly(msg, args) {
 			break;
 	}
 	let timeToVote = await parseTime(msg, args);
-	const w = await new Weekly(msg, question, startDate, endDate, weeklyDescription, weeklyType, answers, timeToVote, type);
+	const w = await new Weekly(msg, question, startDate, endDate, weeklyDescription, weeklyType, answers, timed, timeToVote, type);
 	await w.start(msg);
 	if (w.hasFinished == false) {
+		if(timed === true) {
+			w.isTimed = "true";
+		}
 			w.emojis = (await w.emojis).toString();
 			var insertValues = w.id+"', '"+w.guildId+"', '"+w.channelId+"', '"+w.msgId+"', '"+w.question+"', '"+w.startDate+"', '"+w.endDate+"', '"+w.weeklyDescription+"', '"+w.answers+"', '"+w.createdOn+"', '"+w.isTimed+"', '"+w.hasFinished+"', '"+w.finishTime+"', '"+w.type+"', '"+w.emojis+"', '"+w.results;
 			var sql = "INSERT INTO polls (id, guildId, channelId, msgId, question, startDate, endDate, weeklyDescription, answers, createdOn, isTimed, hasFinished, finishTime, type, emojis, results) VALUES ('"+insertValues+"')";
@@ -240,6 +265,12 @@ function parseToArgs(msg) {
 		args.shift();
 		args.unshift(aux[0], aux[1]);
 	}
+	if (args[1].includes("time")) {
+		timed = true;
+	} else {
+		timed = false;
+	}
+
 	return args;
 }
 function cleanDatabase() {
