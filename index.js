@@ -265,11 +265,13 @@ function parseToArgs(msg) {
 		args.shift();
 		args.unshift(aux[0], aux[1]);
 	}
+if (args[1]) {
 	if (args[1].includes("time")) {
 		timed = true;
 	} else {
 		timed = false;
 	}
+}
 
 	return args;
 }
