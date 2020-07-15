@@ -1,6 +1,7 @@
 const Discord = require("discord.js");
 const hash = require("string-hash");
-const config = require("./botconfig.json");
+//const config = require("./botconfig.json");
+const config = process.env;
 
 class Update {
 
