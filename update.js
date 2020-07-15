@@ -12,7 +12,7 @@ class Update {
 
 	generateEmbed(msg, w) {
 
-		let footer = `Click on the link above | ID:${w.id}`;
+		let footer = `Click on the link above | ID: ${w.id}`;
 		let embed = new Discord.RichEmbed()
 			
 			.setTitle(`🗳️ ┊ We need your vote!`)
