@@ -262,17 +262,6 @@ function parseToArgs(msg) {
 		args.shift();
 		args.unshift(aux[0], aux[1]);
 	}
-<<<<<<< HEAD
-=======
-if (args[1]) {
-	if (args[1].includes("time")) {
-		timed = true;
-	} else {
-		timed = false;
-	}
-}
-
->>>>>>> 1397ec2f7f9e8cc0d057cb775651a45c8e0440e6
 	return args;
 }
 function cleanDatabase() {
