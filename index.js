@@ -1,15 +1,18 @@
 const Discord = require("discord.js");
 const config = process.env;
+//const config = require("./botconfig.json");
 const Poll = require("./poll.js");
 const Weekly = require("./weekly.js");
+const Update = require("./update.js");
 const Datastore = require('nedb');
 var mysql = require('mysql');
 var con = mysql.createPool(config.CLEARDB_DATABASE_URL);
+var inputid;
+var w;
 const client = new Discord.Client();
 const prefix = String("`"+config.prefix+"`");
-const commandSyntaxRegex = /(help)|(poll\s(time=\d+([smhd]?\s))?("[^"\n]+"\s?){1,11})|(weekly\s(time=\d+([smhd]?\s))?("[^"\n]+"\s?){1,11})|(examples)|(end\s\d+)|(invite)$/;
+const commandSyntaxRegex = /(help)|(poll\s(time=\d+([smhd]?\s))?("[^"\n]+"\s?){1,11})|(weekly\s(time=\d+([smhd]?\s))?("[^"\n]+"\s?){1,11})|(update\s\d+)|(examples)|(end\s\d+)|(invite)$/;
 const prefixSyntaxRegex = new RegExp(`^[${config.prefix}]`);
-var timed = false;
 const helpEmbed = new Discord.RichEmbed()
 	.setTitle("Galaxy Cowboys's Commands")
 	.attachFiles(['./assets/zep.jpg', './assets/osalien.jpg'])
@@ -55,43 +58,22 @@ const weeklyEmbed = new Discord.RichEmbed()
 let database = new Datastore('database.db');
 database.loadDatabase();
 database.persistence.setAutocompactionInterval(3600000);
-
 async function finishTimedPolls() {
-
-	con.query("SELECT * FROM polls WHERE isTimed = 'true'", function (err, db, fields) {
-		if (err) throw err;
-	
-	let now = Date.now()
-	//database.find({ isTimed: true, finishTime: { $lte: now } }, (err, dbps) => {
-		//if (err) console.error(err);
-		//console.log(db);
-		db.forEach((dbp) => {
-			let p = Poll.copyConstructor(dbp);
-			let w = Weekly.copyConstructor(dbp);
-			// if (p instanceof Poll && p.isTimed && p.finishTime <= now) {
-			// 	p.finish(client);
-			// 	database.remove({ id: p.id });
-			// }
+	const now = Date.now()
+	database.find({ isTimed: true, finishTime: { $lte: now } }, (err, dbps) => {
+		if (err) console.error(err);
+		dbps.forEach((dbp) => {
+			const p = Poll.copyConstructor(dbp);
+			const w = Weekly.copyConstructor(dbp);
+			if (p instanceof Poll && p.isTimed && p.finishTime <= now) {
+				p.finish(client);
+				database.remove({ id: p.id });
+			}
 			if (w instanceof Weekly && w.isTimed && w.finishTime <= now) {
-				w.answers = w.answers.split(',');
-				w.emojis = w.emojis.split(',');
-				w.results = w.results.split(',');
-				w.hasFinished = false;
-				  if (w) {
-						  w.finish(client);
-						  var sql = "DELETE FROM polls WHERE id = '"+w.id+"'";
-						  con.query(sql, function (err, result) {
-							if (err) throw err;
-							console.log("Number of records deleted: " + result.affectedRows);
-						  });
-			  } else {
-					  msg.reply("Cannot find the poll.");
-				  }
-				//w.finish(client);
-				//database.remove({ id: w.id });
+				w.finish(client);
+				database.remove({ id: w.id });
 			}
 		});
-	// });
 	});
 }
 async function poll(msg, args) {
@@ -167,12 +149,9 @@ async function weekly(msg, args) {
 			break;
 	}
 	let timeToVote = await parseTime(msg, args);
-	const w = await new Weekly(msg, question, startDate, endDate, weeklyDescription, weeklyType, answers, timed, timeToVote, type);
+	const w = await new Weekly(msg, question, startDate, endDate, weeklyDescription, weeklyType, answers, timeToVote, type);
 	await w.start(msg);
 	if (w.hasFinished == false) {
-		if(timed === true) {
-			w.isTimed = "true";
-		}
 			w.emojis = (await w.emojis).toString();
 			var insertValues = w.id+"', '"+w.guildId+"', '"+w.channelId+"', '"+w.msgId+"', '"+w.question+"', '"+w.startDate+"', '"+w.endDate+"', '"+w.weeklyDescription+"', '"+w.answers+"', '"+w.createdOn+"', '"+w.isTimed+"', '"+w.hasFinished+"', '"+w.finishTime+"', '"+w.type+"', '"+w.emojis+"', '"+w.results;
 			var sql = "INSERT INTO polls (id, guildId, channelId, msgId, question, startDate, endDate, weeklyDescription, answers, createdOn, isTimed, hasFinished, finishTime, type, emojis, results) VALUES ('"+insertValues+"')";
@@ -183,8 +162,7 @@ async function weekly(msg, args) {
 	}
 }
 async function end(msg, args) {
-	const inputid = Number(args[1]);
-	var w;
+	inputid = Number(args[1]);
 	con.query("SELECT * FROM polls WHERE id = '"+inputid+"'", function (err, dbp, fields) {
 		  if (err) throw err;
 		  w = Weekly.copyConstructor(dbp[0]);
@@ -203,6 +181,25 @@ async function end(msg, args) {
 				msg.reply("Cannot find the poll.");
 			}
 		});
+}
+async function updateWeekly(msg, args) {
+	let u = new Update(msg);
+
+	inputid = Number(args[1]);
+	con.query("SELECT * FROM polls WHERE id = '"+inputid+"'", function (err, dbp, fields) {
+		if (err) throw err;
+
+		w = Weekly.copyConstructor(dbp[0]);
+		w.hasFinished = false;
+		if (w) {
+			u.start(msg, w);
+		} else {
+				msg.reply("Cannot find the poll.");
+		}
+	});
+
+	
+	
 }
 function parseTime(msg, args) {
 	let time = 0;
@@ -254,7 +251,7 @@ function parseToArgs(msg) {
 		args[0] = args[0].trim();
 		let aux = args[0];
 		aux = aux.split(" ");
-	} else 	if (args[0].startsWith("end")) {
+	} else 	if (args[0].startsWith("end") || args[0].startsWith("update")) {
 		let aux = args[0].split(" ");
 		args[0] = aux[0];
 		args.push(aux[1]);
@@ -265,12 +262,6 @@ function parseToArgs(msg) {
 		args.shift();
 		args.unshift(aux[0], aux[1]);
 	}
-	if (args[1].includes("time")) {
-		timed = true;
-	} else {
-		timed = false;
-	}
-
 	return args;
 }
 function cleanDatabase() {
@@ -336,7 +327,7 @@ client.on("message", async (msg) => {
 	if(msg.content.startsWith(config.prefix) && msg.content !== config.prefix){
 		const command = msg.content.slice(config.prefix.length);
 		let args = parseToArgs(msg);
-		var words = ["help", "poll ", "weekly", "examples", "end", "invite"];
+		var words = ["help", "poll ", "weekly", "examples", "update", "end", "invite"];
 		if(words.includes(args[0])) {
 		if (commandSyntaxRegex.test(command)) {
 			
@@ -357,6 +348,11 @@ client.on("message", async (msg) => {
 							weekly(msg, args);
 						}
 					break;
+					case "update":
+						if (!isDM) {
+							updateWeekly(msg, args);
+						}
+						break;
 					case "end":
 						if (!isDM) {
 							end(msg, args);
@@ -373,7 +369,6 @@ client.on("message", async (msg) => {
 						if (!isDM) {
 							poll(msg, args);
 						}
-						
 						break;
 					default:
 						msg.reply(`What did you try? Learn how to do it correctly with \`${config.prefix}help\``);

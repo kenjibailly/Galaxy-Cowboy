@@ -1,13 +1,14 @@
 const Discord = require("discord.js");
 const hash = require("string-hash");
 const config = process.env;
-let numEmojis = ["1⃣", "2⃣", "3⃣", "4⃣", "5⃣", "6⃣", "7⃣", "8⃣", "9⃣", "🔟"];
+//const config = require("./botconfig.json");
+const numEmojis = ["1⃣", "2⃣", "3⃣", "4⃣", "5⃣", "6⃣", "7⃣", "8⃣", "9⃣", "🔟"];
 var reactEmoji = ["723732274163482673", "723731107471687680", "723732274054561867", "723732274004230175", "723732274012487732", "723732274117476412", "723732273903435827"];
 var dayEmoji = ["<:Sunday:723732274163482673>", "<:Monday:723731107471687680>", "<:Tuesday:723732274054561867>", "<:Wednesay:723732274004230175>", "<:Thursday:723732274012487732>", "<:Friday:723732274117476412>", "<:Saturday:723732273903435827>"];
 var reactCountEmoji = ["Sunday:723732274163482673", "Monday:723731107471687680", "Tuesday:723732274054561867", "Wednesday:723732274004230175", "Thursday:723732274012487732", "Friday:723732274117476412", "Saturday:723732273903435827"];
 var days = ["Sunday", "Monday", "Tuesday", "Wednesday", "Thursday", "Friday", "Saturday"];
 var months = ["January", "February", "March", "April", "May", "June", "July", "August", "September", "October", "November", "December"];
-let handEmojis = ["1⃣", "2⃣", "3⃣", "4⃣", "5⃣", "6⃣", "7⃣"];
+const handEmojis = ["1⃣", "2⃣", "3⃣", "4⃣", "5⃣", "6⃣", "7⃣"];
 let dateDayCollection = [];
 let dateCollection = [];
 let dateEmojiCollection = [];
@@ -20,7 +21,7 @@ var dateFormatOne;
 var positionStart;
 var dateDayRange;
 class Weekly {
-	constructor(msg, question, startDate, endDate, weeklyDescription, weeklyType, answers, isTimed, time, type) {
+	constructor(msg, question, startDate, endDate, weeklyDescription, weeklyType, answers, time, type) {
 		if (msg) { 
 			this.guildId = msg.guild.id;
 			this.channelId = msg.channel.id;
@@ -32,7 +33,7 @@ class Weekly {
 			this.weeklyType = weeklyType;
 			this.answers = answers;
 			this.createdOn = Date.now();
-			this.isTimed = isTimed;
+			this.isTimed = (time != 0);
 			this.hasFinished = false;
 			this.finishTime = new Date(this.createdOn + time).getTime();
 			this.type = type;
@@ -55,7 +56,7 @@ class Weekly {
 		w.createdOn = other.createdOn;
 		w.isTimed = other.isTimed;
 		w.finishTime = other.finishTime;
-		w.hasFinished = other.hasFinished;
+		w.hasFinished = other.hasFInished;
 		w.type = other.type;
 		w.emojis = other.emojis;
 		w.results = other.results;
@@ -63,7 +64,7 @@ class Weekly {
 		return w;
 	}
 	async start(msg) {
-		let date1 = new Date(this.startDate);
+		let date1 = new Date();
 		if (this.startDate == 0 || this.startDate.length === 0 || this.startDate == null) {
 			this.startDate = convertDateFormat(this.incrementDate(date1,0));
 		}
@@ -86,14 +87,15 @@ class Weekly {
 		}
 		let date2 = new Date(this.endDate);
 		let dateTimeRange = date2.getTime() - date1.getTime();		
-		let message = await msg.channel.send({ embed: this.generateEmbed() });
+		const message = await msg.channel.send({ embed: this.generateEmbed() })
 		this.msgId = message.id;
-		let dateDayRange = dateTimeRange / (1000 * 3600 * 24);
+		let dateDayRange = dateTimeRange / (1000 * 3600 * 24)
 		dateDayRange = Math.floor(dateDayRange = dateDayRange + 1);
 		if (dateDayRange > 7) {
 			dateDayRange = 7;
+		} else if (dateDayRange < 7) {
+			dateDayRange = dateDayRange +1;
 		}
-		
 		for (let i = 0; i < dateDayRange && i < 7; ++i) {
 			try {
 				await message.react(dateEmojiReactCollection[i]);
@@ -118,8 +120,8 @@ class Weekly {
 		return increasedDate;
 	}
 	async finish(client) {
-		let now = new Date();
-		let message = await this.getWeeklyMessage(client);
+		const now = new Date();
+		const message = await this.getWeeklyMessage(client);
 		if (!message) {
 			console.error("Cant find poll message");
 			return;
@@ -129,7 +131,7 @@ class Weekly {
 			return;
 		}
 		this.hasFinished = true;
-		let embed = new Discord.RichEmbed(message.embeds[0]);
+		const embed = new Discord.RichEmbed(message.embeds[0]);
 		embed.setColor("FF0800")
 			.setAuthor(`${this.question} [FINISHED]`)
 			.setFooter(`Weekly ${this.id} finished ${now.toUTCString()}`);
@@ -140,18 +142,10 @@ class Weekly {
 		} catch (error) {
 			console.error(error);
 		}
-
-		position = 0;
-		dateDayCollection = [];
-		dateCollection = [];
-		dateEmojiCollection = [];
-		dateEmojiReactCollection = [];
-		dateTextLines = [];
-		reactCountEmojiCollection = [];
 	}
 	async getWeeklyVotes(message) {
 		if (this.hasFinished) {
-			let reactionCollectionWeekly = message.reactions;
+			const reactionCollectionWeekly = message.reactions;
 			reactCountEmojiCollection = this.getReactCountEmojiCollection();
 			for (let i = 0; i < reactCountEmojiCollection.length; i++) {
 				this.results[i] = reactionCollectionWeekly.get(reactCountEmojiCollection[i]).count - 1;
@@ -346,11 +340,11 @@ class Weekly {
 		return weeklyResultsEmbed;
 	}
 	generateId() {
-		let id = "";
+		let id = new String("");
 		if (this.id) {
 			id += this.id + Date.now();
 		} else {
-			let d = new Date(this.createdOn);
+			const d = new Date(this.createdOn);
 			id += d.getUTCFullYear();
 			id += d.getUTCDate();
 			id += d.getUTCHours();
