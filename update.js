@@ -16,7 +16,7 @@ class Update {
 		let embed = new Discord.RichEmbed()
 			
 			.setTitle(`🗳️ ┊ We need your vote!`)
-			.addField(`${w.question}`, `[Vote here](https://discordapp.com/channels/248474715910307840/${w.channelId}/${w.msgId})`)
+			.addField(`${w.question}`, `[Vote here](https://discordapp.com/channels/${w.guildId}/${w.channelId}/${w.msgId})`)
 			.setDescription(`We need your vote on the poll below in order to finish it.`)
 			.setColor("#d596ff")
 			.setFooter(footer);
