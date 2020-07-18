@@ -7,21 +7,22 @@ A discord bot to create interactive simple polls easily.
 
 ## Use the bot
 
-To use this bot type `!poll help` to see the commands availables. Be aware that **only administrators or users with
-a role named "Poll Creator" can interact with the bot**. The "Poll Creator" role has to be created manually and does not
-need any permisssion.  
-You can also use `!poll examples` to see several examples of how to use the bot.
+To use this bot type `*help` to see the commands availables.
+You can also use `*examples` to see several examples of how to use the bot.
 
 ## Features
 
-- Create polls up to 10 possible answers.
+- Create RSVP polls up to a week.
 - Create timed polls up to a week.
 - See the results of a poll as a percentage.
-- Only allow certain users to interact with the bot.
+- Only creator can end poll.
+- Update command as a call to action.
 
 ## Host the bot
 
-To host it create a file name "botconfig.json" or rename and edit "botconfig-sample.json" in the bot's folder. In this file must appear the token of the bot, the prefix ("!poll" by default) and, if wanted, a link to invite.
+To be added.
+
+<!-- To host it create a file name "botconfig.json" or rename and edit "botconfig-sample.json" in the bot's folder. In this file must appear the token of the bot, the prefix ("!poll" by default) and, if wanted, a link to invite.
 
 ```json
 {
@@ -33,8 +34,11 @@ To host it create a file name "botconfig.json" or rename and edit "botconfig-sam
 
 Then in a command line in the bot's folder use `npm install`.
 
-Now, to start the bot use `node index.js`.
+Now, to start the bot use `node index.js`. -->
 
-I'm also hosting an instance of the bot you can invite it with this link:
+## Galaxy-Cowboy Discord Link
+
+Invite the bot to your server using the link below
+
 <https://discord.com/api/oauth2/authorize?client_id=700457249654571139&permissions=1678113856&scope=bot>
-"# Galaxy-Cowboy" 
+
