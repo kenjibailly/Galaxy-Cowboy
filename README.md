@@ -42,4 +42,6 @@ Invite the bot to your server using the link below
 
 <https://discord.com/api/oauth2/authorize?client_id=700457249654571139&permissions=1678113856&scope=bot>
 
+<a href="https://www.paypal.com/cgi-bin/webscr?cmd=_s-xclick&hosted_button_id=QCX6LUQA9CZFC&source=url">
 <img src="https://www.paypalobjects.com/en_US/BE/i/btn/btn_donateCC_LG.gif" border="0" name="submit" title="PayPal - The safer, easier way to pay online!" alt="Donate with PayPal button" />
+</a>
