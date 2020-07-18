@@ -96,7 +96,6 @@ class Weekly {
 		this.msgId = message.id;
 		let dateDayRange = dateTimeRange / (1000 * 3600 * 24)
 		dateDayRange = Math.floor(dateDayRange = dateDayRange + 1);
-		console.log(dateDayRange);
 		if (dateDayRange > 7) {
 			dateDayRange = 7;
 		} else if (dateDayRange < 7) {
