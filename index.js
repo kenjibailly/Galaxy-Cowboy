@@ -14,36 +14,37 @@ const prefix = String("`"+config.prefix+"`");
 const commandSyntaxRegex = /(help)|(poll\s(time=\d+([smhd]?\s))?("[^"\n]+"\s?){1,11})|(weekly\s(time=\d+([smhd]?\s))?("[^"\n]+"\s?){1,11})|(update\s\d+)|(examples)|(end\s\d+)|(invite)$/;
 const prefixSyntaxRegex = new RegExp(`^[${config.prefix}]`);
 const helpEmbed = new Discord.RichEmbed()
-	.setTitle("Galaxy Cowboys's Commands")
-	.attachFiles(['./assets/zep.jpg', './assets/osalien.jpg'])
-	.setThumbnail("attachment://osalien.jpg")
+	.setTitle("❓ ┊ Galaxy Cowboys's Commands")
+	.attachFiles(['./assets/zep.jpg'])
+	//.setThumbnail("attachment://osalien.jpg")
 	.addBlankField()
-	.addField("Create Weekly Poll", `\`${config.prefix}weekly "Title" "Starting Date" "Ending Date"\``+"\nFormat: YYYY-MM-DD format\ndates are optional fields, default starts today, ends in 7 days")
-	.addField("Create Weekly Custom Poll", `\`${config.prefix} After weekly "Title" "start date" "end date" you can put "Custom Description"\``)
-	.addField("Create Y/N poll", `\`${config.prefix}poll "Question"\``)
-	.addField("Create complex poll [2-10 answers]", `\`${config.prefix}poll "Question" "Option 1" "Option 2" ["Option 3" ...]\` (quotes are necessary)`)
-	.addField("Timed polls that close automatically", `\`${config.prefix}{weekly/poll} time=X{s|m|h|d} ...\`\nX = length + secons, minutes, hours, days. 
+	.addField("<:gcstar:730505901529759784>	Create Weekly Poll", `\`${config.prefix}weekly "Title" "Starting Date" "Ending Date"\``+"\nFormat: YYYY-MM-DD format\ndates are optional fields, default starts today, ends in 7 days")
+	.addField("<:gcstar:730505901529759784>	Create Weekly Custom Poll", `\`${config.prefix}weekly "Title" "start date" "end date" you can put "Custom Description"\``)
+	.addField("<:gcstar:730505901529759784>	Create Y/N poll", `\`${config.prefix}poll "Question"\``)
+	.addField("<:gcstar:730505901529759784>	Create complex poll [2-10 answers]", `\`${config.prefix}poll "Question" "Option 1" "Option 2" ["Option 3" ...]\` \n(quotes are necessary)`)
+	.addField("<:gcstar:730505901529759784>	Timed polls that close automatically", `\`${config.prefix}{weekly/poll} time=X{s|m|h|d} ...\`\nX = length + secons, minutes, hours, days. 
 	This can be added in all polls before "Poll Question / Weekly Title"`)
-	.addField("See results of a poll and close the voting", `\`${config.prefix} end ID\`\nwhere ID is the poll id wich
-		appears at the end of the poll`)
-	.addField("See examples", `\`${config.prefix} examples\``)
+	.addField("<:gcstar:730505901529759784>	See results of a poll and close the voting", `\`${config.prefix}end ID\`\nwhere ID is the poll id which appears at the end of the poll`)
+	.addField("<:gcstar:730505901529759784>	See examples", `\`${config.prefix}examples\``)
+	.addField("<:gcstar:730505901529759784>	Call to action Weekly Poll", `\`${config.prefix}update ID\`\nwhere ID is the poll id which appears at the end of the poll`)
 	.addBlankField()
 	.addField("About", "The bot has been created by Zep, leader and founder of Galaxy Cowboys. Feel free to report bugs.")
-	.setFooter("Credits to Zheoni for being able to use the source code of [here](http://github.com/Zheoni/VotaBot) and make this happen", 'attachment://zep.jpg')
+	.setFooter("Credits to Zheoni for being able to use the source code of Votabot and make this happen", 'attachment://zep.jpg')
 	.setColor("#DDA0DD");
 const examplesEmbed = new Discord.RichEmbed()
-	.setTitle("Examples of VotaBot's commands")
-	.attachFiles(['./assets/zep.jpg', './assets/osalien.jpg'])
-	.setThumbnail("attachment://osalien.jpg")
+	.setTitle("📖 ┊ Examples of Galaxy Cowboy's commands")
+	.attachFiles(['./assets/zep.jpg'])
+	//.setThumbnail("attachment://osalien.jpg")
 	.addBlankField()
-	.addField("Weekly Poll", `\`${config.prefix}weekly "Title" "2020-06-22" "2020-06-28"\``)
-	.addField("Custom Weekly Poll", `\`${config.prefix}weekly "Title" "2020-06-22" "2020-06-28" "Custom Description"\``)
-	.addField("Custom Weekly Poll without dates", `\`${config.prefix}weekly "Title" "2020-06-22" "2020-06-28" "Custom Description" "no dates"\``)
-	.addField("Y/N Poll", `\`${config.prefix}poll "Do you like this?"\``)
-	.addField("Complex poll", `\`${config.prefix}poll "What do you wanna play?" "GW2" "GW2!" "GW2!!"\``)
-	.addField("Timed Weekly Poll", `\`${config.prefix}weekly time=7d "Title"\``)
-	.addField("Timed Poll", `\`${config.prefix}poll time=6h "Chat tonight?"\``)
-	.addField("See the results of a poll", `\`${config.prefix}poll end 61342378\``)
+	.addField("<:gcstar:730505901529759784> Weekly Poll", `\`${config.prefix}weekly "Title" "2020-06-22" "2020-06-28"\``)
+	.addField("<:gcstar:730505901529759784> Custom Weekly Poll", `\`${config.prefix}weekly "Title" "2020-06-22" "2020-06-28" "Custom Description"\``)
+	.addField("<:gcstar:730505901529759784> Custom Weekly Poll without dates", `\`${config.prefix}weekly "Title" "2020-06-22" "2020-06-28" "Custom Description" "no dates"\``)
+	.addField("<:gcstar:730505901529759784> Y/N Poll", `\`${config.prefix}poll "Do you like this?"\``)
+	.addField("<:gcstar:730505901529759784> Complex poll", `\`${config.prefix}poll "Which event do you want?" "Strikes" "Fractals" "Raid"\``)
+	.addField("<:gcstar:730505901529759784> Timed Weekly Poll", `\`${config.prefix}weekly time=7d "Which day are you free?"\``)
+	.addField("<:gcstar:730505901529759784> Timed Poll", `\`${config.prefix}poll time=6h "GW2 tonight?"\``)
+	.addField("<:gcstar:730505901529759784> See the results of a poll", `\`${config.prefix}end 61342378\``)
+	.addField("<:gcstar:730505901529759784> Call to action Weekly Poll", `\`${config.prefix}update 61342378\``)
 	.addBlankField()
 	.attachFiles(['./assets/zep.jpg'])
 	.setFooter("The bot has been created by Zep, leader and founder of Galaxy Cowboys.\nFeel free to report bugs.", 'attachment://zep.jpg')
@@ -153,8 +154,8 @@ async function weekly(msg, args) {
 	await w.start(msg);
 	if (w.hasFinished == false) {
 			w.emojis = (await w.emojis).toString();
-			var insertValues = w.id+"', '"+w.guildId+"', '"+w.channelId+"', '"+w.msgId+"', '"+w.question+"', '"+w.startDate+"', '"+w.endDate+"', '"+w.weeklyDescription+"', '"+w.answers+"', '"+w.createdOn+"', '"+w.isTimed+"', '"+w.hasFinished+"', '"+w.finishTime+"', '"+w.type+"', '"+w.emojis+"', '"+w.results;
-			var sql = "INSERT INTO polls (id, guildId, channelId, msgId, question, startDate, endDate, weeklyDescription, answers, createdOn, isTimed, hasFinished, finishTime, type, emojis, results) VALUES ('"+insertValues+"')";
+			var insertValues = w.id+"','"+w.userId+"', '"+w.guildId+"', '"+w.channelId+"', '"+w.msgId+"', '"+w.question+"', '"+w.startDate+"', '"+w.endDate+"', '"+w.weeklyDescription+"', '"+w.answers+"', '"+w.createdOn+"', '"+w.isTimed+"', '"+w.hasFinished+"', '"+w.finishTime+"', '"+w.type+"', '"+w.emojis+"', '"+w.results;
+			var sql = "INSERT INTO polls (id, userId, guildId, channelId, msgId, question, startDate, endDate, weeklyDescription, answers, createdOn, isTimed, hasFinished, finishTime, type, emojis, results) VALUES ('"+insertValues+"')";
 			con.query(sql, function (err, result) {
 			  if (err) throw err;
 			  console.log("1 record inserted");
@@ -164,22 +165,28 @@ async function weekly(msg, args) {
 async function end(msg, args) {
 	inputid = Number(args[1]);
 	con.query("SELECT * FROM polls WHERE id = '"+inputid+"'", function (err, dbp, fields) {
-		  if (err) throw err;
-		  w = Weekly.copyConstructor(dbp[0]);
-		  w.answers = w.answers.split(',');
-		  w.emojis = w.emojis.split(',');
-		  w.results = w.results.split(',');
-		  w.hasFinished = false;
+		if (err) throw err;
+		  if(dbp.length !== 0){
+			w = Weekly.copyConstructor(dbp[0]);
+			w.answers = w.answers.split(',');
+			w.emojis = w.emojis.split(',');
+			w.results = w.results.split(',');
+			w.hasFinished = false;
 			if (w) {
-					w.finish(client);
-					var sql = "DELETE FROM polls WHERE id = '"+w.id+"'";
-					con.query(sql, function (err, result) {
-					  if (err) throw err;
-					  console.log("Number of records deleted: " + result.affectedRows);
-					});
-		} else {
-				msg.reply("Cannot find the poll.");
-			}
+				if(w.userId === msg.member.user.id || msg.member.roles.has("249528962433286144") || msg.member.roles.has("702647763665551411")){
+						w.finish(client);
+						var sql = "DELETE FROM polls WHERE id = '"+w.id+"'";
+							con.query(sql, function (err, result) {
+							if (err) throw err;
+								console.log("Number of records deleted: " + result.affectedRows);
+							});
+				} else {
+					msg.reply("You're not the creator of the poll.");
+				}
+			} else {
+					msg.reply("Cannot find the poll.");
+				}
+		 }
 		});
 }
 async function updateWeekly(msg, args) {
@@ -188,15 +195,16 @@ async function updateWeekly(msg, args) {
 	inputid = Number(args[1]);
 	con.query("SELECT * FROM polls WHERE id = '"+inputid+"'", function (err, dbp, fields) {
 		if (err) throw err;
-
-		w = Weekly.copyConstructor(dbp[0]);
-		w.hasFinished = false;
-		if (w) {
-			u.start(msg, w);
-		} else {
-				msg.reply("Cannot find the poll.");
+		if(dbp.length !== 0){
+			w = Weekly.copyConstructor(dbp[0]);
+			w.hasFinished = false;
+			if (w) {
+				u.start(msg, w);
+			} else {
+					msg.reply("Cannot find the poll.");
+			}
 		}
-	});
+		});
 
 	
 	

@@ -24,6 +24,7 @@ class Weekly {
 	constructor(msg, question, startDate, endDate, weeklyDescription, weeklyType, answers, time, type) {
 		if (msg) { 
 			this.guildId = msg.guild.id;
+			this.userId = msg.member.user.id;
 			this.channelId = msg.channel.id;
 			this.msgId = null;
 			this.question = question;
@@ -45,6 +46,7 @@ class Weekly {
 	static copyConstructor (other) {
 		let w = new Weekly();
 		w.guildId = other.guildId;
+		w.userId = other.userId;
 		w.channelId = other.channelId;
 		w.msgId = other.msgId;
 		w.question = other.question;
@@ -361,6 +363,7 @@ class Weekly {
 		return stringCountEmojiCollection;
 	}
 	getReactCountEmojiCollection() {
+		reactCountEmojiCollection = [];
 		let date1 = new Date();
 		if (this.startDate == 0 || this.startDate.length === 0 || this.startDate == null) {
 			this.startDate = convertDateFormat(this.incrementDate(date1,0));
