@@ -368,7 +368,7 @@ client.on("message", async (msg) => {
 						break;
 					case "invite":
 						if (config.link) {
-							msg.reply(`This is the link to invite me to another server! ${config.link}`);
+							msg.reply(`This is the link to invite me to another server!\n${config.link}`);
 						} else {
 							msg.reply("The link is not available in this moment.");
 						}
