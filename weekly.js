@@ -66,9 +66,12 @@ class Weekly {
 		return w;
 	}
 	async start(msg) {
-		let date1 = new Date();
+		let date1;
 		if (this.startDate == 0 || this.startDate.length === 0 || this.startDate == null) {
+			date1 = new Date();
 			this.startDate = convertDateFormat(this.incrementDate(date1,0));
+		} else {
+			date1 = new Date(this.startDate);
 		}
 		function convertDateFormat(date) {
 			var Xmas95 = new Date(date);
@@ -93,10 +96,11 @@ class Weekly {
 		this.msgId = message.id;
 		let dateDayRange = dateTimeRange / (1000 * 3600 * 24)
 		dateDayRange = Math.floor(dateDayRange = dateDayRange + 1);
+		console.log(dateDayRange);
 		if (dateDayRange > 7) {
 			dateDayRange = 7;
 		} else if (dateDayRange < 7) {
-			dateDayRange = dateDayRange +1;
+			
 		}
 		for (let i = 0; i < dateDayRange && i < 7; ++i) {
 			try {
