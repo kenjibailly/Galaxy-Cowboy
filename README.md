@@ -2,7 +2,7 @@
 
 A discord bot to create interactive simple polls easily.
 
-![Image of a poll](images/readme-image.png)
+![Image of a poll](assets/readme-image.png)
 
 
 ## Use the bot
