@@ -1,6 +1,6 @@
 # Galaxy Cowboy
 
-A discord bot to create interactive simple polls easily.
+A discord bot to create interactive "When can you meet?" polls easily.
 
 ![Image of a poll](assets/readme-image.png)
 
