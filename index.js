@@ -93,10 +93,10 @@ async function poll(msg, args) {
 	let type;
 	if (args[1].includes("time")) {
 		var argsSpliced = args.slice(2,args.length);
+		// argsSpliced = args.slice(1,args.length);
 		var question = argsSpliced[0];
-	} else {
-		var argsSpliced = args.slice(1,args.length);
-	}
+		//console.log("argsSpliced: "+argsSpliced);
+	} 
 	let timeToVote = await parseTime(msg, args);
 	switch (args.length) {
 		case 0:
@@ -380,7 +380,6 @@ client.on("message", async (msg) => {
 		const command = msg.content.slice(config.prefix.length);
 		let args = parseToArgs(msg);
 		args[0] = args[0].split(' ').join('');
-		console.log("args: "+args);
 		var words = ["help", "poll", "weekly", "examples", "update", "end", "invite", "donate"];
 		if(words.includes(args[0])) {
 		if (commandSyntaxRegex.test(command)) {

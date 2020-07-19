@@ -56,7 +56,6 @@ class Poll {
 				console.log(error);
 			}
 		}
-		
 		//msg.reply("poll message id:"+message.id);
 		return message.id;
 	}
@@ -121,7 +120,9 @@ class Poll {
 
 	generateEmbed() {
 		let str = new String();
-
+		if (this.isTimed) {
+			this.answers.splice(0,1);
+		}
 		if (this.type !== "yn") {
 			for (let i = 0; i < this.answers.length && i < 10; i++) {
 				str += `<:${this.emojis[i]}> ${this.answers[i]}\n`;
@@ -202,9 +203,17 @@ class Poll {
 				return handEmojis;
 			case "default":
 				numEmojiCollection = [];
-				for (let i = 0; i < this.answers.length && i < 10; ++i) {
-					numEmojiCollection.push(numEmojis[i]);
-			}
+				 if (this.isTimed) {
+					 //this.answers.splice(this.answers.length-1,this.answers.length);
+					 for (let i = 0; i < this.answers.length-1 && i < 10; ++i) {
+						numEmojiCollection.push(numEmojis[i]);
+					}
+				}else {
+					for (let i = 0; i < this.answers.length && i < 10; ++i) {
+						numEmojiCollection.push(numEmojis[i]);
+					}
+				}
+				console.log(this.answers);
 				return numEmojiCollection;
 			default:
 				throw new Error("The poll type is not known");
