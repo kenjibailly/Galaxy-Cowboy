@@ -70,19 +70,51 @@ let database = new Datastore('database.db');
 database.loadDatabase();
 database.persistence.setAutocompactionInterval(3600000);
 async function finishTimedPolls() {
-	const now = Date.now()
-	database.find({ isTimed: true, finishTime: { $lte: now } }, (err, dbps) => {
-		if (err) console.error(err);
-		dbps.forEach((dbp) => {
-			const p = Poll.copyConstructor(dbp);
-			const w = Weekly.copyConstructor(dbp);
-			if (p instanceof Poll && p.isTimed && p.finishTime <= now) {
-				p.finish(client);
-				database.remove({ id: p.id });
-			}
+
+	con.query("SELECT * FROM polls WHERE isTimed = 'true' AND TYPE = 'weekly'", function (err, db, fields) {
+		if (err) throw err;
+	let now = Date.now()
+		db.forEach((dbp) => {
+			let w = Weekly.copyConstructor(dbp);
 			if (w instanceof Weekly && w.isTimed && w.finishTime <= now) {
-				w.finish(client);
-				database.remove({ id: w.id });
+				w.answers = w.answers.split(',');
+				w.emojis = w.emojis.split(',');
+				w.results = w.results.split(',');
+				w.hasFinished = false;
+				  if (w) {
+						  w.finish(client);
+						  var sql = "DELETE FROM polls WHERE id = '"+w.id+"'";
+						  con.query(sql, function (err, result) {
+							if (err) throw err;
+							console.log("Number of records deleted: " + result.affectedRows);
+						  });
+			  } else {
+					  msg.reply("Cannot find the poll.");
+				  }
+			}
+		});
+	});
+
+	con.query("SELECT * FROM polls WHERE isTimed = 'true' AND TYPE IN('yn','default')", function (err, db, fields) {
+	if (err) throw err;
+	let now = Date.now()
+		db.forEach((dbp) => {
+			let p = Poll.copyConstructor(dbp);
+			if (p instanceof Poll && p.isTimed && p.finishTime <= now) {
+				p.answers = p.answers.split(',');
+				p.emojis = p.emojis.split(',');
+				p.results = p.results.split(',');
+				p.hasFinished = false;
+				  if (p) {
+						  p.finish(client);
+						  var sql = "DELETE FROM polls WHERE id = '"+p.id+"'";
+						  con.query(sql, function (err, result) {
+							if (err) throw err;
+							console.log("Number of records deleted: " + result.affectedRows);
+						  });
+			  } else {
+					  msg.reply("Cannot find the poll.");
+				  }
 			}
 		});
 	});
@@ -91,12 +123,6 @@ async function poll(msg, args) {
 	var question = args[1];
 	let answers = [];
 	let type;
-	if (args[1].includes("time")) {
-		var argsSpliced = args.slice(2,args.length);
-		// argsSpliced = args.slice(1,args.length);
-		var question = argsSpliced[0];
-		//console.log("argsSpliced: "+argsSpliced);
-	} 
 	let timeToVote = await parseTime(msg, args);
 	switch (args.length) {
 		case 0:
@@ -114,6 +140,14 @@ async function poll(msg, args) {
 			type = "default";
 			break;
 	}
+
+	if (args[1].includes("time")) {
+		var argsSpliced = args.slice(2,args.length);
+		var question = argsSpliced[0];
+		if (args.length === 3) {
+			type = "yn";
+		}
+	} 
 	args.splice(0,2);
 	const p = await new Poll(msg, question, answers, timeToVote, type);
 	await p.start(msg);

@@ -49,6 +49,9 @@ class Poll {
 	async start(msg) {
 		const message = await msg.channel.send({ embed: this.generateEmbed() })
 		this.msgId = message.id;
+		if (this.answers.length === 0) {
+			this.answers = handEmojis;
+		}
 		for (let i = 0; i < this.answers.length && i < 10; ++i) {
 			try {
 				await message.react(this.emojis[i]);
@@ -104,7 +107,7 @@ class Poll {
 			
 		} else {
 			throw new Error("Poll not ended");
-			}
+		}
 	}
 
 	async showPollResults(channel) {
@@ -213,7 +216,6 @@ class Poll {
 						numEmojiCollection.push(numEmojis[i]);
 					}
 				}
-				console.log(this.answers);
 				return numEmojiCollection;
 			default:
 				throw new Error("The poll type is not known");
