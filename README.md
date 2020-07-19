@@ -1,5 +1,8 @@
 # Galaxy Cowboy
 
+This bot has been inspired to be created for a Guild Wars 2 Guild utility tool. 
+Now I'm sharing the tool for all of you for free as I'm a hobbyist programmer.
+
 A discord bot to create interactive "When can you meet?" polls easily.
 
 ![Image of a poll](assets/readme-image.png)
