@@ -1,7 +1,7 @@
 const Discord = require("discord.js");
 const hash = require("string-hash");
-const config = process.env;
-//const config = require("./botconfig.json");
+//const config = process.env;
+const config = require("./botconfig.json");
 const numEmojis = ["1⃣", "2⃣", "3⃣", "4⃣", "5⃣", "6⃣", "7⃣", "8⃣", "9⃣", "🔟"];
 var reactEmoji = ["734158773739847800", "734158773740109876", "734158773777727600", "734158773794504765", "734158773874196614", "734158773731459134", "734158773811413112"];
 var dayEmoji = ["<:Sunday:734158773739847800>", "<:Monday:734158773740109876>", "<:Tuesday:734158773777727600>", "<:Wednesday:734158773794504765>", "<:Thursday:734158773874196614>", "<:Friday:734158773731459134>", "<:Saturday:734158773811413112>"];

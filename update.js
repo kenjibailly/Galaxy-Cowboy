@@ -14,7 +14,6 @@ class Update {
 
 		let footer = `Click on the link above | ID: ${w.id}`;
 		let embed = new Discord.RichEmbed()
-			
 			.setTitle(`🗳️ ┊ We need your vote!`)
 			.addField(`${w.question}`, `[Vote here](https://discordapp.com/channels/${w.guildId}/${w.channelId}/${w.msgId})`)
 			.setDescription(`We need your vote on the poll below in order to finish it.`)

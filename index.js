@@ -1,6 +1,6 @@
 const Discord = require("discord.js");
-const config = process.env;
-//const config = require("./botconfig.json");
+//const config = process.env;
+const config = require("./botconfig.json");
 const Poll = require("./poll.js");
 const Weekly = require("./weekly.js");
 const Update = require("./update.js");
@@ -112,8 +112,13 @@ async function poll(msg, args) {
 	const p = await new Poll(msg, question, answers, timeToVote, type);
 	await p.start(msg);
 	if (p.hasFinished == false) {
-		database.insert(p);
-		// maybe we can get a duplicated id...
+		p.emojis = (await p.emojis).toString();
+		var insertValues = p.id+"','"+p.userId+"', '"+p.guildId+"', '"+p.channelId+"', '"+p.msgId+"', '"+p.question+"', '', '', '', '', '"+p.createdOn+"', '"+p.isTimed+"', '"+p.hasFinished+"', '"+p.finishTime+"', '"+p.type+"', '"+p.emojis+"', '"+p.results;
+		var sql = "INSERT INTO polls (id, userId, guildId, channelId, msgId, question, startDate, endDate, weeklyDescription, answers, createdOn, isTimed, hasFinished, finishTime, type, emojis, results) VALUES ('"+insertValues+"')";
+		con.query(sql, function (err, result) {
+		  if (err) throw err;
+		  console.log("1 record inserted");
+		});
 	}
 }
 async function weekly(msg, args) {
@@ -145,20 +150,20 @@ async function weekly(msg, args) {
 		weeklyDescription = argsSpliced[3];
 	} 
 	let answers = [];
-	let type;
-	switch (args.length) {
-		case 0:
-			msg.reply("You cannot create a poll without a question");
-			return;
-		case 1:
-			answers = ["", ""];
-			type = "yn";
-			break;
-		default:
-			answers = args;
-			type = "yn";
-			break;
-	}
+	let type = "weekly";
+	// switch (args.length) {
+	// 	case 0:
+	// 		msg.reply("You cannot create a poll without a question");
+	// 		return;
+	// 	case 1:
+	// 		answers = ["", ""];
+	// 		type = "yn";
+	// 		break;
+	// 	default:
+	// 		answers = args;
+	// 		type = "yn";
+	// 		break;
+	// }
 	let timeToVote = await parseTime(msg, args);
 	const w = await new Weekly(msg, question, startDate, endDate, weeklyDescription, weeklyType, answers, timeToVote, type);
 	await w.start(msg);
@@ -177,25 +182,48 @@ async function end(msg, args) {
 	con.query("SELECT * FROM polls WHERE id = '"+inputid+"'", function (err, dbp, fields) {
 		if (err) throw err;
 		  if(dbp.length !== 0){
-			w = Weekly.copyConstructor(dbp[0]);
-			w.answers = w.answers.split(',');
-			w.emojis = w.emojis.split(',');
-			w.results = w.results.split(',');
-			w.hasFinished = false;
-			if (w) {
-				if(w.userId === msg.member.user.id || msg.member.roles.has("249528962433286144") || msg.member.roles.has("702647763665551411")){
-						w.finish(client);
-						var sql = "DELETE FROM polls WHERE id = '"+w.id+"'";
-							con.query(sql, function (err, result) {
-							if (err) throw err;
-								console.log("Number of records deleted: " + result.affectedRows);
-							});
-				} else {
-					msg.reply("You're not the creator of the poll.");
-				}
-			} else {
-					msg.reply("Cannot find the poll.");
-				}
+
+			if(dbp[0].type == "yn" || dbp[0].type == "default") {
+				p = Poll.copyConstructor(dbp[0]);
+				p.answers = p.answers.split(',');
+				p.emojis = p.emojis.split(',');
+				p.results = p.results.split(',');
+				p.hasFinished = false;
+				if (p) {
+					if(p.userId === msg.member.user.id || msg.member.roles.has("249528962433286144") || msg.member.roles.has("702647763665551411")){
+							p.finish(client);
+							var sql = "DELETE FROM polls WHERE id = '"+p.id+"'";
+								con.query(sql, function (err, result) {
+								if (err) throw err;
+									console.log("Number of records deleted: " + result.affectedRows);
+								});
+					} else {
+						msg.reply("You're not the creator of the poll.");
+					}
+					} else {
+						msg.reply("Cannot find the poll.");
+					}
+			}else {
+				w = Weekly.copyConstructor(dbp[0]);
+				w.answers = w.answers.split(',');
+				w.emojis = w.emojis.split(',');
+				w.results = w.results.split(',');
+				w.hasFinished = false;
+				if (w) {
+					if(w.userId === msg.member.user.id || msg.member.roles.has("249528962433286144") || msg.member.roles.has("702647763665551411")){
+							w.finish(client);
+							var sql = "DELETE FROM polls WHERE id = '"+w.id+"'";
+								con.query(sql, function (err, result) {
+								if (err) throw err;
+									console.log("Number of records deleted: " + result.affectedRows);
+								});
+					} else {
+						msg.reply("You're not the creator of the poll.");
+					}
+					} else {
+						msg.reply("Cannot find the poll.");
+					}
+			}
 		 }
 		});
 }
