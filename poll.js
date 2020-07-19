@@ -4,6 +4,7 @@ const hash = require("string-hash");
 const numEmojis = ["1one:734470639481782346", "2two:734470639733178450", "3three:734470639817064469", "4four:734470639607480374", "5five:734470639879979151", "6six:734470639980904538", "7seven:734470639976579112", "8eight:734470639574057082", "9nine:734470639586640055", "10ten:734471585284620348"];
 const handEmojis = ["thumbs_up:734374828957630493", "thumbs_down:734374828739395584"];
 var numEmojiCollection = [];
+var result;
 
 class Poll {
 	constructor(msg, question, answers, time, type) {
@@ -55,6 +56,7 @@ class Poll {
 				console.log(error);
 			}
 		}
+		
 		//msg.reply("poll message id:"+message.id);
 		return message.id;
 	}
@@ -88,8 +90,9 @@ class Poll {
 	}
 
 	async getPollVotes(message) {
+		var reactionCollectionPoll = [];
 		if (this.hasFinished) {
-			const reactionCollectionPoll = message.reactions;
+			reactionCollectionPoll = message.reactions;
 			if (this.type == "yn"){
 				for (let i = 0; i < handEmojis.length; i++) {
 					this.results[i] = reactionCollectionPoll.get(handEmojis[i]).count - 1;
@@ -147,7 +150,7 @@ class Poll {
 
 		for (let i = 0; i < this.results.length; i++) {
 			let percentage = (this.results[i] / totalVotes * 100);
-			let result = {
+			result = {
 				emoji: this.emojis[i],
 				answer: this.answers[i],
 				votes: this.results[i],
@@ -171,7 +174,8 @@ class Poll {
 			.setDescription(description)
 			.setFooter(footer)
 			.setColor("#0080FF");
-
+		result = [];
+		this.answers = [];
 		return resultsEmbed;
 	}
 
@@ -197,6 +201,7 @@ class Poll {
 			case "yn":
 				return handEmojis;
 			case "default":
+				numEmojiCollection = [];
 				for (let i = 0; i < this.answers.length && i < 10; ++i) {
 					numEmojiCollection.push(numEmojis[i]);
 			}
