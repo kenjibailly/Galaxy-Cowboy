@@ -168,7 +168,7 @@ class Poll {
 			description += `<:${r.emoji}> - ** ${r.votes} ** - ${r.percentage}% \n`;
 		});
 
-		let footer = `Results from poll ${this.id} finished on ${new Date(this.finishTime).toUTCString()}`;
+		let footer = `Results from poll ${this.id} finished on ${new Date().toUTCString()}`;
 		let resultsEmbed = new Discord.RichEmbed()
 			.setAuthor("Results of: " + this.question)
 			.setDescription(description)
