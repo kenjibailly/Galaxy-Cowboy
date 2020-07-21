@@ -58,7 +58,7 @@ class Weekly {
 		w.createdOn = other.createdOn;
 		w.isTimed = other.isTimed;
 		w.finishTime = other.finishTime;
-		w.hasFinished = other.hasFInished;
+		w.hasFinished = other.hasFinished;
 		w.type = other.type;
 		w.emojis = other.emojis;
 		w.results = other.results;
@@ -170,7 +170,7 @@ class Weekly {
 	}
 	generateEmbed(msg) {
 		let footer = `React with the emojis below | ID: ${this.id}`;
-		if (this.isTimed) footer += ` | This poll ends in ${new Date(this.finishTime).toUTCString()}`;
+		if (this.isTimed) footer += ` | This poll ends on ${new Date(this.finishTime).toUTCString()}`;
 		current_datetime = this.getCurrentDateTime();
 		dateFormatOne = this.convertDayDate(current_datetime);
 		positionStart = this.getPositionStart(current_datetime, dateFormatOne);

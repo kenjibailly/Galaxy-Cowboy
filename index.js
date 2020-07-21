@@ -4,14 +4,16 @@ const config = require("./botconfig.json");
 const Poll = require("./poll.js");
 const Weekly = require("./weekly.js");
 const Update = require("./update.js");
+const Status = require("./status.js");
 const Datastore = require('nedb');
 var mysql = require('mysql');
 var con = mysql.createPool(config.CLEARDB_DATABASE_URL);
 var inputid;
 var w;
+var typeSet;
 const client = new Discord.Client();
 const prefix = String("`"+config.prefix+"`");
-const commandSyntaxRegex = /(help)|(poll\s(time=\d+([smhd]?\s))?("[^"\n]+"\s?){1,11})|(weekly\s(time=\d+([smhd]?\s))?("[^"\n]+"\s?){1,11})|(update\s\d+)|(examples)|(end\s\d+)|(invite)|(donate)$/;
+const commandSyntaxRegex = /(help)|(poll\s(time=\d+([smhd]?\s))?("[^"\n]+"\s?){1,11})|(weekly\s(time=\d+([smhd]?\s))?("[^"\n]+"\s?){1,11})|(status?)|(removestatus)|(setstatus\s(time=\d+([smhd]?\s))?("[^"\n]+"\s?){1,11})|(update\s\d+)|(examples)|(end\s\d+)|(invite)|(donate)$/;
 const prefixSyntaxRegex = new RegExp(`^[${config.prefix}]`);
 const helpEmbed = new Discord.RichEmbed()
 	.setTitle("❓ ┊ Galaxy Cowboys's Commands")
@@ -69,8 +71,14 @@ const weeklyEmbed = new Discord.RichEmbed()
 let database = new Datastore('database.db');
 database.loadDatabase();
 database.persistence.setAutocompactionInterval(3600000);
-async function finishTimedPolls() {
 
+
+//////////////////////////////////////
+
+// AUTOMATICALLY FINISH TIMED POLLS
+
+//////////////////////////////////////
+async function finishTimedPolls() {
 	con.query("SELECT * FROM polls WHERE isTimed = 'true' AND TYPE = 'weekly'", function (err, db, fields) {
 		if (err) throw err;
 	let now = Date.now()
@@ -89,7 +97,7 @@ async function finishTimedPolls() {
 							console.log("Number of records deleted: " + result.affectedRows);
 						  });
 			  } else {
-					  msg.reply("Cannot find the poll.");
+					  console.log("Cannot find the poll.");
 				  }
 			}
 		});
@@ -113,12 +121,38 @@ async function finishTimedPolls() {
 							console.log("Number of records deleted: " + result.affectedRows);
 						  });
 			  } else {
-					  msg.reply("Cannot find the poll.");
+				console.log("Cannot find the poll.");
+				  }
+			}
+		});
+	});
+
+	con.query("SELECT * FROM statuses WHERE isTimed = 'true'", function (err, db, fields) {
+		if (err) throw err;
+	let now = Date.now()
+		db.forEach((dbp) => {
+			let s = Status.copyConstructor(dbp);
+			if (s instanceof Status && s.isTimed && s.finishTime <= now) {
+				//s.hasFinished = false;
+				  if (s) {
+						  var sql = "DELETE FROM statuses WHERE id = '"+s.id+"'";
+						  con.query(sql, function (err, result) {
+							if (err) throw err;
+							console.log("Number of records deleted: " + result.affectedRows);
+						  });
+			  } else {
+				console.log("Cannot find the status.");
 				  }
 			}
 		});
 	});
 }
+
+//////////////////////////////////////
+
+// CREATE POLLS
+
+//////////////////////////////////////
 async function poll(msg, args) {
 	var question = args[1];
 	let answers = [];
@@ -161,6 +195,12 @@ async function poll(msg, args) {
 		});
 	}
 }
+
+//////////////////////////////////////
+
+// CREATE WEEKLY POLLS
+
+//////////////////////////////////////
 async function weekly(msg, args) {
 	var question = args[1];
 	let endDate = [];
@@ -191,19 +231,6 @@ async function weekly(msg, args) {
 	} 
 	let answers = [];
 	let type = "weekly";
-	// switch (args.length) {
-	// 	case 0:
-	// 		msg.reply("You cannot create a poll without a question");
-	// 		return;
-	// 	case 1:
-	// 		answers = ["", ""];
-	// 		type = "yn";
-	// 		break;
-	// 	default:
-	// 		answers = args;
-	// 		type = "yn";
-	// 		break;
-	// }
 	let timeToVote = await parseTime(msg, args);
 	const w = await new Weekly(msg, question, startDate, endDate, weeklyDescription, weeklyType, answers, timeToVote, type);
 	await w.start(msg);
@@ -217,6 +244,110 @@ async function weekly(msg, args) {
 			});
 	}
 }
+
+//////////////////////////////////////
+
+// SET STATUS
+
+//////////////////////////////////////
+async function setstatus(msg, args) {
+	var status;
+	var argsSpliced;
+	typeSet = "set";
+	if (args[1].includes("time")) {
+		argsSpliced = args.slice(2,args.length);
+			status = args[2];
+	} else {
+		argsSpliced = args.slice(1,args.length);
+		status = args[1]
+	}
+	let type = "Vacation";
+	let timeToVote = await parseTime(msg, args);
+	const s = await new Status(msg, status, timeToVote, type, typeSet);
+	await s.start(msg);
+	if (s.hasFinished == false) {
+		var insertValues = s.userId+"', '"+s.guildId+"', '"+s.channelId+"', '"+s.msgId+"', '"+s.status+"', '"+s.createdOn+"', '"+s.isTimed+"', '"+s.hasFinished+"', '"+s.finishTime.getTime()+"', '"+s.type;
+		var sql = "INSERT INTO statuses (userId, guildId, channelId, msgId, status, createdOn, isTimed, hasFinished, finishTime, type) VALUES ('"+insertValues+"')";
+		con.query(sql, function (err, result) {
+		  if (err) throw err;
+		  console.log("1 record inserted");
+		});
+	}
+}
+
+
+//////////////////////////////////////
+
+// LOOKUP STATUS
+
+//////////////////////////////////////
+async function status(msg, args) {
+	var status;
+	var argsSpliced;
+	typeSet = "lookup";
+	if (args[1].includes("time")) {
+		argsSpliced = args.slice(2,args.length);
+			status = args[2];
+	} else {
+		argsSpliced = args.slice(1,args.length);
+		status = args[1]
+	}
+	var inputUserId = args[1].split('<@!').join('').split('>').join('');
+		con.query("SELECT * FROM statuses WHERE userId = '"+inputUserId+"'", function (err, dbp, fields) {
+			if (err) throw err;
+			if(dbp.length !== 0){
+					s = Status.copyConstructor(dbp[0]);
+					s.hasFinished = false;
+					if (s) {
+						s.display(client, msg);
+						} else {
+							msg.reply("Cannot find the user.");
+						}
+				} else {
+					notFound(msg);
+				}
+
+		  console.log("1 record searched");
+		});
+}
+   async function notFound(msg) {
+        message = await msg.channel.send({ embed: generateEmbedLookupNotFound() })
+	}
+	
+	function generateEmbedLookupNotFound(msg) {
+        let footer = `Thank you for your notice`;
+        if (this.isTimed) footer += ` | This status ends on ${new Date(this.finishTime).toUTCString()}`;
+		let embed = new Discord.RichEmbed()
+			.setTitle(`<:status:734954957777928324>	┊ Status Enabler`)
+			.setDescription(`<:offnight:734894950260670475> This user has no status enabled`)
+			.setColor("#d596ff")
+			.setFooter(footer, "https://cdn1.vectorstock.com/i/1000x1000/57/80/ufo-neon-sign-design-template-aliens-neon-vector-26235780.jpg");
+		return embed;
+	}
+
+//////////////////////////////////////
+
+// REMOVE STATUS
+
+//////////////////////////////////////
+async function removestatus(msg, args) {
+	var sql = "DELETE FROM statuses WHERE userId = '"+msg.member.user.id+"'";
+		con.query(sql, function (err, result) {
+		if (err) throw err;
+			console.log("Number of records deleted: " + result.affectedRows);
+			if(result.affectedRows >= 1) {
+				msg.reply("Status removed");
+			} else {
+				msg.reply("No status found to be removed");
+			}
+		});
+}
+
+//////////////////////////////////////
+
+// END POLL WITH ID
+
+//////////////////////////////////////
 async function end(msg, args) {
 	inputid = Number(args[1]);
 	con.query("SELECT * FROM polls WHERE id = '"+inputid+"'", function (err, dbp, fields) {
@@ -267,9 +398,14 @@ async function end(msg, args) {
 		 }
 		});
 }
+
+//////////////////////////////////////
+
+// UPDATE POLL EMBED MESSAGE
+
+//////////////////////////////////////
 async function updateWeekly(msg, args) {
 	let u = new Update(msg);
-
 	inputid = Number(args[1]);
 	con.query("SELECT * FROM polls WHERE id = '"+inputid+"'", function (err, dbp, fields) {
 		if (err) throw err;
@@ -283,9 +419,6 @@ async function updateWeekly(msg, args) {
 			}
 		}
 		});
-
-	
-	
 }
 function parseTime(msg, args) {
 	let time = 0;
@@ -315,15 +448,29 @@ function parseTime(msg, args) {
 				break;
 			default: time *= 60000;
 		}
+	} else {
+		time = "";
 	}
-	if (time > 604800000) return 604800000;
-	else return time;
+	// if (time > 604800000) return 604800000;
+	return time;
 }
+
+//////////////////////////////////////
+
+// ARGS ARE DEFINED PER COMMAND
+
+//////////////////////////////////////
 function parseToArgs(msg) {
 	let args = msg.content.slice(config.prefix.length)
 		.trim()
 		.split("\"")
 		.filter((phrase) => phrase.trim() !== "");
+	if (args[0].startsWith("status")) {
+		args[0] = args[0].trim();
+		let aux = args[0];
+		aux = aux.split(' ');
+		return aux;
+	}
 	if (args[0].startsWith("weekly")) {
 		if (args.length == 4) {
 			startDate = args[3];
@@ -350,11 +497,12 @@ function parseToArgs(msg) {
 	}
 	return args;
 }
-function cleanDatabase() {
-	console.log("Cleaning the database...");
-	const aWeekAgo = Date.now() - 604800000;
-	database.remove({ createdOn: { $lt: aWeekAgo } }, { multi: true }, (err, n) => console.log(n + " entries removed."));
-}
+
+//////////////////////////////////////
+
+// BOT STATUS IN CHAT PANEL + REGEX VALIDATION COMMANDS SWITCH
+
+//////////////////////////////////////
 client.on("ready", () => {
 	console.log(`Bot logged in as ${client.user.tag}!`);
 	var discordActivity = delay =>
@@ -387,7 +535,6 @@ client.on("ready", () => {
 	}, delay * 5000);
 	discordActivity(1);
 	setInterval(finishTimedPolls, 10000);
-	setInterval(cleanDatabase, 86400000);
 	setInterval(() => console.log("The bot is in " + client.guilds.size + " guild(s)"), 1800000); // logging info
 });
 client.on("message", async (msg) => {
@@ -413,11 +560,15 @@ client.on("message", async (msg) => {
 	if(msg.content.startsWith(config.prefix) && msg.content !== config.prefix){
 		const command = msg.content.slice(config.prefix.length);
 		let args = parseToArgs(msg);
-		args[0] = args[0].split(' ').join('');
-		var words = ["help", "poll", "weekly", "examples", "update", "end", "invite", "donate"];
+		if (args[0].includes('@')) {
+			args[0] = args[0].split(' ').join('');
+		} else {
+			args[0] = args[0].split(' ').join('');
+		}
+		var words = ["help", "poll", "weekly", "status", "setstatus", "removestatus", "examples", "update", "end", "invite", "donate"];
 		if(words.includes(args[0])) {
-		if (commandSyntaxRegex.test(command)) {
 			
+		if (commandSyntaxRegex.test(command)) {
 			if (args.length > 0) {
 				args[0] = String(args[0]);
 				
@@ -438,6 +589,21 @@ client.on("message", async (msg) => {
 							weekly(msg, args);
 						}
 					break;
+					case "status":
+						if (!isDM) {
+							status(msg, args);
+						}
+					break;
+					case "setstatus":
+						if (!isDM) {
+							setstatus(msg, args);
+						}
+					break;	
+					case "removestatus":
+						if (!isDM) {
+							removestatus(msg, args);
+						}
+					break;							
 					case "update":
 						if (!isDM) {
 							updateWeekly(msg, args);
