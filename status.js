@@ -94,7 +94,8 @@ class Status {
 		});
 
         let footer = `Thank you for your notice`;
-        if (this.isTimed == "true") footer += ` | This status ends on ${new Date(this.finishTime).toUTCString()}`;
+        if (this.isTimed == "true") footer += ` | This status ends on ${new Date(this.finishTime)}`;
+
 		let embed = new Discord.RichEmbed()
 			//.setAuthor("Status Enabler", "https://cdn1.vectorstock.com/i/1000x1000/57/80/ufo-neon-sign-design-template-aliens-neon-vector-26235780.jpg", "https://img.freepik.com/free-vector/alien-outer-space-neon-sign_104045-467.jpg?size=338&ext=jpg")
 			.setTitle(`<:status:734954957777928324> ┊ Status Enabler`)
