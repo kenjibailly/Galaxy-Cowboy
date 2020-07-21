@@ -11,6 +11,7 @@ var con = mysql.createPool(config.CLEARDB_DATABASE_URL);
 var inputid;
 var w;
 var typeSet;
+var statusChannelID = config.statusChannelID;
 const client = new Discord.Client();
 const prefix = String("`"+config.prefix+"`");
 const commandSyntaxRegex = /(help)|(poll\s(time=\d+([smhd]?\s))?("[^"\n]+"\s?){1,11})|(weekly\s(time=\d+([smhd]?\s))?("[^"\n]+"\s?){1,11})|(status?)|(removestatus)|(setstatus\s(time=\d+([smhd]?\s))?("[^"\n]+"\s?){1,11})|(update\s\d+)|(examples)|(end\s\d+)|(invite)|(donate)$/;
@@ -29,6 +30,11 @@ const helpEmbed = new Discord.RichEmbed()
 	.addField("<:gcstar:730505901529759784>	See results of a poll and close the voting", `\`${config.prefix}end ID\`\nwhere ID is the poll id which appears at the end of the poll`)
 	.addField("<:gcstar:730505901529759784>	See examples", `\`${config.prefix}examples\``)
 	.addField("<:gcstar:730505901529759784>	Call to action Weekly Poll", `\`${config.prefix}update ID\`\nwhere ID is the poll id which appears at the end of the poll`)
+	.addBlankField()
+	.addField("<:gcstar:730505901529759784>	Set status", `\`${config.prefix}setstatus "Custom Status"\`\nSet your custom status`)
+	.addField("<:gcstar:730505901529759784>	Set timed status", `\`${config.prefix}setstatus time=3d "Custom Timed Status"\`\nSet your custom timed status`)
+	.addField("<:gcstar:730505901529759784>	Set timed status", `\`${config.prefix}removestatus\`\nRemove your current status`)
+	.addField("<:gcstar:730505901529759784>	Set timed status", `\`${config.prefix}status @user\`\nCheck status of user`)
 	.addBlankField()
 	.addField("<:paypal:734189737077637121>	Donate", `\`${config.prefix}donate\`\nDonate to help keeping the uptime of the bot`)
 	.addBlankField()
@@ -49,6 +55,11 @@ const examplesEmbed = new Discord.RichEmbed()
 	.addField("<:gcstar:730505901529759784> Timed Poll", `\`${config.prefix}poll time=6h "GW2 tonight?"\``)
 	.addField("<:gcstar:730505901529759784> See the results of a poll", `\`${config.prefix}end 61342378\``)
 	.addField("<:gcstar:730505901529759784> Call to action Weekly Poll", `\`${config.prefix}update 61342378\``)
+	.addBlankField()
+	.addField("<:gcstar:730505901529759784>	Set status", `\`${config.prefix}setstatus "Playing GW2"\`\nSet your custom status`)
+	.addField("<:gcstar:730505901529759784>	Set timed status", `\`${config.prefix}setstatus time=3d "Out for the weekend"\`\nSet your custom timed status`)
+	.addField("<:gcstar:730505901529759784>	Set timed status", `\`${config.prefix}removestatus\`\nRemove your current status`)
+	.addField("<:gcstar:730505901529759784>	Set timed status", `\`${config.prefix}status\` <@!190932547184623616>\nCheck status of user`)
 	.addBlankField()
 	.attachFiles(['./assets/zep.jpg'])
 	.setFooter("The bot has been created by Zep, leader and founder of Galaxy Cowboys.\nFeel free to report bugs.", 'attachment://zep.jpg')
@@ -126,8 +137,10 @@ async function finishTimedPolls() {
 			}
 		});
 	});
+}
 
-	con.query("SELECT * FROM statuses WHERE isTimed = 'true'", function (err, db, fields) {
+async function autoremoveListedStatuses() {
+	con.query("SELECT * FROM statuses", function (err, db, fields) {
 		if (err) throw err;
 	let now = Date.now()
 		db.forEach((dbp) => {
@@ -135,9 +148,107 @@ async function finishTimedPolls() {
 			if (s instanceof Status && s.isTimed && s.finishTime <= now) {
 				//s.hasFinished = false;
 				  if (s) {
+					removeStatuses(s);
 						  var sql = "DELETE FROM statuses WHERE id = '"+s.id+"'";
 						  con.query(sql, function (err, result) {
 							if (err) throw err;
+							console.log("Number of records deleted: " + result.affectedRows);
+						  });
+			  } else {
+				console.log("Cannot find the status.");
+				  }
+			}
+		});
+	});
+}
+
+//////////////////////////////////////
+
+// SHOW ALL STATUSES IN CHANNEL
+
+//////////////////////////////////////
+async function showAllStatuses() {
+	let resultsLength;
+	let db;
+	let  getInformationFromDB = function(callback) {
+		con.query("SELECT * FROM statuses WHERE displayed != 'true'", function (err, dbp, fields) {
+			if (err) throw err;
+				resultsLength = dbp.length;
+				db = dbp;
+				callback(null, db);
+		});
+	}
+	getInformationFromDB(function (err, result) {
+		if (err) console.log("Database error!");
+		else 
+		//console.log(resultsLength);
+		for (let i = 0; i < resultsLength; i++) {
+			let s = Status.copyConstructor(db[i]);
+			updateStatuses(s);
+		}
+	  });
+}
+
+async function updateStatuses(s){
+	await s.displayAllStatuses(client);
+	var sql = `UPDATE statuses SET displayed = "true", msgId = '${s.msgId}' WHERE id = '${s.id}'`;
+	await con.query(sql, function (err, result) {
+		if (err)
+			throw err;
+		console.log("1 record inserted");
+	});
+
+}
+
+//////////////////////////////////////
+
+// REMOVE FINISHED STATUSES IN CHANNEL
+
+//////////////////////////////////////
+async function removeStatuses(s) {
+	let channel = client.channels.get(statusChannelID);
+	await channel.fetchMessage(s.msgId).then(msg => {
+			//const fetchedMsg = msg.first();
+			console.log("1 Fetched message deleted");
+			msg.delete();
+		});
+}
+
+
+//////////////////////////////////////
+
+// REMOVE STATUS COMMAND
+
+//////////////////////////////////////
+async function removestatus(msg) {
+	await removeListedStatuses(msg);
+	var sql = `DELETE FROM statuses WHERE userId = '${msg.member.user.id}'`;
+		await con.query(sql, function (err, result) {
+		if (err) throw err;
+			//console.log("Number of records deleted: " + result.affectedRows);
+			if(result.affectedRows >= 1) {
+				msg.reply("Status removed");
+				console.log("Statuses removed: "+result.affectedRows);
+			} else {
+				msg.reply("No status found to be removed");
+			}
+		});
+}
+
+async function removeListedStatuses(msg) {
+	con.query(`SELECT * FROM statuses WHERE userId = '${msg.member.user.id}'`, function (err, db, fields) {
+		if (err) throw err;
+	let now = Date.now()
+		db.forEach((dbp) => {
+			let s = Status.copyConstructor(dbp);
+			// if (s instanceof Status && s.isTimed && s.finishTime <= now) {
+			if (s instanceof Status) {
+				//s.hasFinished = false;
+				  if (s) {
+						  var sql = "DELETE FROM statuses WHERE id = '"+s.id+"'";
+						  con.query(sql, function (err, result) {
+							if (err) throw err;
+							removeStatuses(s);
 							console.log("Number of records deleted: " + result.affectedRows);
 						  });
 			  } else {
@@ -263,16 +374,23 @@ async function setstatus(msg, args) {
 	}
 	let type = "Vacation";
 	let timeToVote = await parseTime(msg, args);
-	const s = await new Status(msg, status, timeToVote, type, typeSet);
-	await s.start(msg);
-	if (s.hasFinished == false) {
-		var insertValues = s.userId+"', '"+s.guildId+"', '"+s.channelId+"', '"+s.msgId+"', '"+s.status+"', '"+s.createdOn+"', '"+s.isTimed+"', '"+s.hasFinished+"', '"+s.finishTime.getTime()+"', '"+s.type;
-		var sql = "INSERT INTO statuses (userId, guildId, channelId, msgId, status, createdOn, isTimed, hasFinished, finishTime, type) VALUES ('"+insertValues+"')";
-		con.query(sql, function (err, result) {
-		  if (err) throw err;
-		  console.log("1 record inserted");
-		});
-	}
+	con.query("SELECT * FROM statuses WHERE userId = '"+msg.member.user.id+"'", function (err, dbp, fields) {
+		if (err) throw err;
+		if(dbp.length < 1){
+			const s = new Status(msg, status, timeToVote, type, typeSet);
+			s.start(msg);
+			if (s.hasFinished == false) {
+				var insertValues = s.userId+"', '"+s.guildId+"', '"+s.channelId+"', '"+s.msgId+"', '"+s.status+"', '"+s.createdOn+"', '"+s.isTimed+"', '"+s.hasFinished+"', '"+s.finishTime.getTime()+"', '"+s.type+"', '"+s.displayed;
+				var sql = "INSERT INTO statuses (userId, guildId, channelId, msgId, status, createdOn, isTimed, hasFinished, finishTime, type, displayed) VALUES ('"+insertValues+"')";
+				con.query(sql, function (err, result) {
+				if (err) throw err;
+				console.log("1 record inserted");
+				});
+			}
+		} else {
+			msg.reply("You already have a status set. Remove your status first.");
+		}
+	});
 }
 
 
@@ -318,30 +436,12 @@ async function status(msg, args) {
         let footer = `Thank you for your notice`;
         if (this.isTimed) footer += ` | This status ends on ${new Date(this.finishTime).toUTCString()}`;
 		let embed = new Discord.RichEmbed()
-			.setTitle(`<:status:734954957777928324>	┊ Status Enabler`)
+			.setTitle(`<:status:734954957777928324> ┊ Status Enabler`)
 			.setDescription(`<:offnight:734894950260670475> This user has no status enabled`)
 			.setColor("#d596ff")
 			.setFooter(footer, "https://cdn1.vectorstock.com/i/1000x1000/57/80/ufo-neon-sign-design-template-aliens-neon-vector-26235780.jpg");
 		return embed;
 	}
-
-//////////////////////////////////////
-
-// REMOVE STATUS
-
-//////////////////////////////////////
-async function removestatus(msg, args) {
-	var sql = "DELETE FROM statuses WHERE userId = '"+msg.member.user.id+"'";
-		con.query(sql, function (err, result) {
-		if (err) throw err;
-			console.log("Number of records deleted: " + result.affectedRows);
-			if(result.affectedRows >= 1) {
-				msg.reply("Status removed");
-			} else {
-				msg.reply("No status found to be removed");
-			}
-		});
-}
 
 //////////////////////////////////////
 
@@ -535,6 +635,8 @@ client.on("ready", () => {
 	}, delay * 5000);
 	discordActivity(1);
 	setInterval(finishTimedPolls, 10000);
+	setInterval(autoremoveListedStatuses, 10000);
+	setInterval(showAllStatuses, 10000);
 	setInterval(() => console.log("The bot is in " + client.guilds.size + " guild(s)"), 1800000); // logging info
 });
 client.on("message", async (msg) => {
