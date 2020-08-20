@@ -18,6 +18,9 @@ You can also use `!poll examples` to see several examples of how to use the bot.
 - Create timed polls up to a week.
 - See the results of a poll as a percentage.
 - Only allow certain users to interact with the bot.
+- Create (timed) date RSVP polls with dates (max 7 days)
+- Set a (timed) status
+- All statuses can be posted in an overview, channel can be configured
 
 ## Host the bot
 
