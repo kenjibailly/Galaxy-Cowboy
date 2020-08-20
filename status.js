@@ -4,6 +4,8 @@ const config = require("./botconfig.json");
 const logger = require('./logger.js');
 var days = ["Sunday", "Monday", "Tuesday", "Wednesday", "Thursday", "Friday", "Saturday"];
 var months = ["January", "February", "March", "April", "May", "June", "July", "August", "September", "October", "November", "December"];
+var mysql = require('mysql');
+var con = mysql.createPool(config.CLEARDB_DATABASE_URL);
 var message;
 var statusChannelID = config.statusChannelID;
 class Status {
@@ -12,7 +14,7 @@ class Status {
 			this.guildId = msg.guild.id;
 			this.userId = msg.member.user.id;
 			this.channelId = msg.channel.id;
-			this.msgId = "null";
+			this.msgId = msg.id;
             this.status = status;
             this.createdOn = Date.now();
 			this.isTimed = (time != 0);
@@ -102,11 +104,53 @@ class Status {
 			.setFooter(footer, "https://cdn1.vectorstock.com/i/1000x1000/57/80/ufo-neon-sign-design-template-aliens-neon-vector-26235780.jpg");
 		return embed;
 	}
-	async displayAllStatuses(client) {
-		let sent = await client.channels.get(statusChannelID).send({ embed: this.generateEmbedAllStatuses() }).then(sent => {
-			this.msgId = sent.id;
+	async displayAllStatuses(s, client) {
+		var finishTime = this.finishTime;
+		var isTimed = this.isTimed;
+		var status = this.status;
+		var userId = this.userId;
+		con.query(`SELECT * FROM statusChannelIDs WHERE guildId = '${this.guildId}'`, function (err, db, fields) {
+			if (err) throw err;
+			db.forEach((dbp) => {
+				console.log("dbp.statusChannelID: "+dbp.statusChannelID);
+				let sent = client.channels.get(dbp.statusChannelID).send({ embed: generateEmbedAllStatuses() }).then(sent => {
+				this.msgId = sent.id;
+				
+				var sql = `UPDATE statuses SET displayed = "true", msgId = '${this.msgId}' WHERE id = '${s.id}'`;
+				con.query(sql, function (err, result) {
+				if (err)
+				throw err;
+				logger.info("1 record updated");
+	});
+				});
+			});
+
+			function generateEmbedAllStatuses() {
+				let footer = `Thank you for your notice`;
+				let finishTimeStatus = convertDayDate(new Date(Number(finishTime))).toString();
+				if (isTimed == "true") footer += ` | This status ends on ${finishTimeStatus}`;
+				let embed = new Discord.RichEmbed()
+					.setTitle(`<:status:734954957777928324> ┊ Status Enabler`)
+					.setDescription(`<@!${userId}>'s status is set to:\n<:onday:734894950826639410> ${status}`)
+					.setColor("#d596ff")
+					.setFooter(footer, "https://cdn1.vectorstock.com/i/1000x1000/57/80/ufo-neon-sign-design-template-aliens-neon-vector-26235780.jpg");
+				return embed;
+			}
+			
+			function convertDayDate(date) {
+				var newDate = new Date(date);
+				let za = new Date(newDate),
+				zaR = za.getUTCFullYear(),
+				zaMth = months[za.getUTCMonth()],
+				zaDs = za.getUTCDate(),
+				zaTm = za.toTimeString().substr(0,5);
+				var convertedDateFormat = zaMth + " " + zaDs + ", " + zaR + " " + zaTm;
+				return convertedDateFormat;
+			}
 		});
-		this.msgIdFinished = "true";
+		// let sent = client.channels.get(statusChannelID).send({ embed: this.generateEmbedAllStatuses() }).then(sent => {
+		// this.msgId = sent.id;
+		// });
 	}
 	convertDayDate(date) {
         var newDate = new Date(date);
@@ -118,7 +162,7 @@ class Status {
         var convertedDateFormat = zaMth + " " + zaDs + ", " + zaR + " " + zaTm;
         return convertedDateFormat;
     }
-	generateEmbedAllStatuses(msg) {
+	generateEmbedAllStatuses() {
 		let footer = `Thank you for your notice`;
 		let finishTimeStatus = this.convertDayDate(new Date(Number(this.finishTime))).toString();
         if (this.isTimed == "true") footer += ` | This status ends on ${finishTimeStatus}`;

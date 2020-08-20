@@ -8,6 +8,7 @@ const Update = require("./update.js");
 const Status = require("./status.js");
 const Datastore = require('nedb');
 const finishTimedPolls = require('./functions/finishTimedPolls.js');
+const richPresence = require('./functions/richPresence.js');
 //const removeListedStatuses = require('./functions/removeListedStatuses.js');
 const logger = require('./logger.js');
 var mysql = require('mysql');
@@ -15,12 +16,13 @@ var con = mysql.createPool(config.CLEARDB_DATABASE_URL);
 var inputid;
 var w;
 var typeSet;
-var statusChannelID = config.statusChannelID;
+// var statusChannelID = config.statusChannelID;
 const client = new Discord.Client();
 const prefix = String("`"+config.prefix+"`");
-const commandSyntaxRegex = /(help)|(poll\s(time=\d+([smhd]?\s))?("[^"\n]+"\s?){1,11})|(weekly\s(time=\d+([smhd]?\s))?("[^"\n]+"\s?){1,11})|(status?)|(removestatus)|(setstatus\s(time=\d+([smhd]?\s))?("[^"\n]+"\s?){1,11})|(update\s\d+)|(examples)|(end\s\d+)|(invite)|(donate)$/;
+const commandSyntaxRegex = /(help)|(poll\s(time=\d+([smhd]?\s))?("[^"\n]+"\s?){1,11})|(weekly\s(time=\d+([smhd]?\s))?("[^"\n]+"\s?){1,11})|(status?)|(setstatuschannel?)|(removestatus)|(setstatus\s(time=\d+([smhd]?\s))?("[^"\n]+"\s?){1,11})|(update\s\d+)|(examples)|(end\s\d+)|(invite)|(donate)$/;
 const prefixSyntaxRegex = new RegExp(`^[${config.prefix}]`);
 const helpEmbed = require('./help.js');
+const examplesEmbed = require('./examples.js');
 let donateEmbed = require('./donate.js');
 let database = new Datastore('database.db');
 database.loadDatabase();
@@ -77,57 +79,80 @@ async function showAllStatuses() {
 	  });
 }
 async function updateStatuses(s){
-	await s.displayAllStatuses(client);
-	var sql = `UPDATE statuses SET displayed = "true", msgId = '${s.msgId}' WHERE id = '${s.id}'`;
-	await con.query(sql, function (err, result) {
-		if (err)
-			throw err;
-		logger.info("1 record inserted");
-	});
+	await s.displayAllStatuses(s, client);
+	console.log("s.msgId: "+s.msgId);
+	//ToDo: fetch msgId of posted status 
+	// var sql = `UPDATE statuses SET displayed = "true", msgId = '${s.msgId}' WHERE id = '${s.id}'`;
+	// con.query(sql, function (err, result) {
+	// 	if (err)
+	// 		throw err;
+	// 	logger.info("1 record updated");
+	// });
 }
 //////////////////////////////////////
 // REMOVE FINISHED STATUSES IN CHANNEL
 //////////////////////////////////////
 async function removeStatuses(s) {
-	let channel = client.channels.get(statusChannelID);
-	await channel.fetchMessage(s.msgId).then(msg => {
-			//const fetchedMsg = msg.first();
-			msg.delete();
-			logger.info("1 Fetched message deleted");
+	// foreach channels or what is s?
+	con.query(`SELECT * FROM statusChannelIDs WHERE guildId = ${s.guildId} `, function (err, dbp, fields) {
+		if (err) throw err;
+		dbp.forEach((db) => {
+			statusChannelID = db.statusChannelID;
+			let channel = client.channels.get(statusChannelID);
+			// console.log("db.statusChannelID:");
+			// console.log(db.statusChannelID);
+			// console.log("channel:");
+			// console.log(channel);
+			channel.fetchMessage(s.msgId).then(msg => {
+					//const fetchedMsg = msg.first();
+					msg.delete();
+					logger.info("1 Fetched message deleted");
+					var sql = "DELETE FROM statuses WHERE id = '"+s.id+"'";
+						  con.query(sql, function (err, result) {
+							if (err) throw err;
+							logger.info("Number of records deleted: " + result.affectedRows);
+							console.log(s);
+							client.users.get(s.userId).send("Status removed.");
+					});
+			});
 		});
+	});
+
 }
 //////////////////////////////////////
 // REMOVE STATUS COMMAND
 //////////////////////////////////////
 async function removestatus(msg) {
 	await removeListedStatuses(msg);
-	var sql = `DELETE FROM statuses WHERE userId = '${msg.member.user.id}'`;
-		await con.query(sql, function (err, result) {
-		if (err) throw err;
-			if(result.affectedRows >= 1) {
-				msg.reply("Status removed");
-				logger.info("Statuses removed: "+result.affectedRows);
-			} else {
-				msg.reply("No status found to be removed");
-			}
-		});
+	// var sql = `DELETE FROM statuses WHERE userId = '${msg.member.user.id}'`;
+	// 	con.query(sql, function (err, result) {
+	// 	if (err)
+	// 		throw err;
+	// 	if (result.affectedRows >= 1) {
+	// 		msg.reply("Status removed");
+	// 		logger.info("Statuses removed: " + result.affectedRows);
+	// 	}
+	// 	else {
+	// 		msg.reply("No status found to be removed");
+	// 	}
+	// });
 }
 async function removeListedStatuses(msg) {
 	con.query(`SELECT * FROM statuses WHERE userId = '${msg.member.user.id}'`, function (err, db, fields) {
 		if (err) throw err;
-	let now = Date.now()
+		let now = Date.now()
 		db.forEach((dbp) => {
 			let s = Status.copyConstructor(dbp);
 			// if (s instanceof Status && s.isTimed && s.finishTime <= now) {
 			if (s instanceof Status) {
 				//s.hasFinished = false;
 				  if (s) {
-						  var sql = "DELETE FROM statuses WHERE id = '"+s.id+"'";
-						  con.query(sql, function (err, result) {
-							if (err) throw err;
+						//   var sql = "DELETE FROM statuses WHERE id = '"+s.id+"'";
+						//   con.query(sql, function (err, result) {
+						// 	if (err) throw err;
 							removeStatuses(s);
-							logger.info("Number of records deleted: " + result.affectedRows);
-						  });
+						// 	logger.info("Number of records deleted: " + result.affectedRows);
+						//   });
 			  } else {
 				logger.info("Cannot find the status.");
 				  }
@@ -142,7 +167,7 @@ async function poll(msg, args) {
 	var question = args[1];
 	let answers = [];
 	let type;
-	let timeToVote = await parseTime(msg, args);
+	let timeToVote = parseTime(msg, args);
 	switch (args.length) {
 		case 0:
 			msg.reply("You cannot create a poll with no question");
@@ -167,10 +192,10 @@ async function poll(msg, args) {
 		}
 	} 
 	args.splice(0,2);
-	const p = await new Poll(msg, question, answers, timeToVote, type);
+	const p = new Poll(msg, question, answers, timeToVote, type);
 	await p.start(msg);
 	if (p.hasFinished == false) {
-		p.emojis = (await p.emojis).toString();
+		p.emojis = p.emojis.toString();
 		var insertValues = p.id+"','"+p.userId+"', '"+p.guildId+"', '"+p.channelId+"', '"+p.msgId+"', '"+p.question+"', '', '', '', '', '"+p.createdOn+"', '"+p.isTimed+"', '"+p.hasFinished+"', '"+p.finishTime+"', '"+p.type+"', '"+p.emojis+"', '"+p.results;
 		var sql = "INSERT INTO polls (id, userId, guildId, channelId, msgId, question, startDate, endDate, weeklyDescription, answers, createdOn, isTimed, hasFinished, finishTime, type, emojis, results) VALUES ('"+insertValues+"')";
 		con.query(sql, function (err, result) {
@@ -212,12 +237,12 @@ async function weekly(msg, args) {
 	} 
 	let answers = [];
 	let type = "weekly";
-	let timeToVote = await parseTime(msg, args);
-	const w = await new Weekly(msg, question, startDate, endDate, weeklyDescription, weeklyType, answers, timeToVote, type);
+	let timeToVote = parseTime(msg, args);
+	const w = new Weekly(msg, question, startDate, endDate, weeklyDescription, weeklyType, answers, timeToVote, type);
 	await w.start(msg);
 	if (w.hasFinished == false) {
 			w.emojis = (await w.emojis).toString();
-			var insertValues = w.id+"','"+w.userId+"', '"+w.guildId+"', '"+w.channelId+"', '"+w.msgId+"', '"+w.question+"', '"+w.startDate+"', '"+w.endDate+"', '"+w.weeklyDescription+"', '"+w.answers+"', '"+w.createdOn+"', '"+w.isTimed+"', '"+w.hasFinished+"', '"+w.finishTime+"', '"+w.type+"', '"+w.emojis+"', '"+w.results;
+			var insertValues = `${w.id}','${w.userId}', '${w.guildId}', '${w.channelId}', '${w.msgId}', '${w.question}', '${w.startDate}', '${w.endDate}', '${w.weeklyDescription}', '${w.answers}', '${w.createdOn}', '${w.isTimed}', '${w.hasFinished}', '${w.finishTime}', '${w.type}', '${w.emojis}', '${w.results}`;
 			var sql = "INSERT INTO polls (id, userId, guildId, channelId, msgId, question, startDate, endDate, weeklyDescription, answers, createdOn, isTimed, hasFinished, finishTime, type, emojis, results) VALUES ('"+insertValues+"')";
 			con.query(sql, function (err, result) {
 			  if (err) throw err;
@@ -240,8 +265,8 @@ async function setstatus(msg, args) {
 		status = args[1]
 	}
 	let type = "Vacation";
-	let timeToVote = await parseTime(msg, args);
-	con.query("SELECT * FROM statuses WHERE userId = '"+msg.member.user.id+"'", function (err, dbp, fields) {
+	let timeToVote = parseTime(msg, args);
+	con.query(`SELECT * FROM statuses WHERE userId = '${msg.member.user.id}' AND guildId = '${msg.guild.id}'`, function (err, dbp, fields) {
 		if (err) throw err;
 		if(dbp.length < 1){
 			const s = new Status(msg, status, timeToVote, type, typeSet);
@@ -259,6 +284,42 @@ async function setstatus(msg, args) {
 		}
 	});
 }
+
+//////////////////////////////////////
+// SET STATUS CHANNEL
+//////////////////////////////////////
+async function setstatuschannel (msg, args) {
+	if (msg.member.hasPermission('ADMINISTRATOR')) {
+		con.query("SELECT * FROM statusChannelIDs", function (err, db, fields) {
+			if (err) throw err;
+			statusChannelID = args[1].replace(/\D/g,'');
+			var dbp;
+			db.forEach((dbps) => {
+				dbp = dbps;
+			});
+				if(dbp.guildId === msg.guild.id) {
+					// var insertValues = `${statusChannelID}', '${msg.guild.id}', '${msg.member.user.id}', '${msg.channel.id}', '${msg.id}', ${msg.member.user.tag}`;
+					var sql = `UPDATE statusChannelIDs SET statusChannelID = ${statusChannelID}, guildId = ${msg.guild.id}, userId = ${msg.member.user.id}, channelId = ${msg.channel.id}, msgId = ${msg.id}, userName = "${msg.member.user.tag}" WHERE guildId = ${msg.guild.id}`;
+						con.query(sql, function (err, result) {
+						if (err) throw err;
+						logger.info("1 record updated");
+						msg.reply(`Status Channel updated to <#${statusChannelID}>`);
+					});
+				} else {
+					var insertValues = `${statusChannelID}', '${msg.guild.id}', '${msg.member.user.id}', '${msg.channel.id}', '${msg.id}', '${msg.member.user.tag}`;
+					var sql = `INSERT INTO statusChannelIDs (statusChannelID, guildId, userId, channelId, msgId, userName) VALUES ('${insertValues}')`;
+						con.query(sql, function (err, result) {
+						if (err) throw err;
+						logger.info("1 record inserted");
+						msg.reply(`Status Channel Set to <#${statusChannelID}>`);
+					});
+				}
+		});
+	} else {
+		msg.reply(`You do not have admin rights.`);
+	}
+}
+
 //////////////////////////////////////
 // LOOKUP STATUS
 //////////////////////////////////////
@@ -367,6 +428,7 @@ async function updateWeekly(msg, args) {
 			w = Weekly.copyConstructor(dbp[0]);
 			w.hasFinished = false;
 			if (w) {
+				logger.info("hey");
 				u.start(msg, w);
 			} else {
 					msg.reply("Cannot find the poll.");
@@ -457,60 +519,33 @@ async function finishTimedPollsExecute () {
 //////////////////////////////////////
 client.on("ready", () => {
 	logger.info(`Bot logged in as ${client.user.tag}!`);
-	var discordActivity = delay =>
-	setTimeout(() => {
-		var discordActivityStatus;
-		var discordActivityType;
-		switch (delay) {
-			case 1:
-				discordActivityStatus = `${config.prefix}help`;
-				discordActivityType = "WATCHING";
-				break;
-			case 2:
-				discordActivityStatus = `${config.prefix}examples`;
-				discordActivityType = "WATCHING";
-				break;
-			case 3:
-				discordActivityStatus = "Guild Wars 2";
-				discordActivityType = "PLAYING";
-				break;
-			default:
-				discordActivityStatus = "Hey, test me out!";
-				discordActivityType = "LISTENING";
-				break;
-		}
-		if (delay > 3) {
-			delay = 0;
-		}
-		client.user.setActivity(`${discordActivityStatus}`, { type: discordActivityType});
-		discordActivity(delay +1);
-	}, delay * 5000);
-	discordActivity(1);
+	richPresence.activity(client);
 	setInterval(finishTimedPollsExecute, 10000);
 	setInterval(autoremoveListedStatuses, 10000);
 	setInterval(showAllStatuses, 10000);
 	setInterval(() => logger.info("The bot is in " + client.guilds.size + " guild(s)"), 1800000); // logging info
 });
+
 client.on("message", async (msg) => {
 	if (msg.content.startsWith(config.prefix) && !msg.author.bot) {
 		let isDM = false, dmChannel;
-		if (msg.channel.type === "text" || msg.channel.type === "news") {
-			let role;
-			let roleid = -1;
-			try {
-				role = await msg.guild.roles.find((r) => r.name === "Raid Sheriff 👹");
-				if (role) roleid = role.id;
-			} catch (error) {
-				console.error(error);
-			}
-			if (!(msg.member.hasPermission("SEND_MESSAGES") || msg.member.roles.has(roleid))) {
-				msg.reply("You don't have permision to do that. Only administrators or users with a role named \"Poll Creator\"");
-				logger.info(`${msg.author.tag} on ${msg.guild.name} tried to create a poll without permission"`);
-				return;
-			}
-		} else {
-			isDM = true;
-		}
+		// if (msg.channel.type === "text" || msg.channel.type === "news") {
+		// 	let role;
+		// 	let roleid = -1;
+		// 	try {
+		// 		role = msg.guild.roles.find((r) => r.name === "Raid Sheriff 👹");
+		// 		if (role) roleid = role.id;
+		// 	} catch (error) {
+		// 		console.error(error);
+		// 	}
+		// 	if (!(msg.member.hasPermission("SEND_MESSAGES") || msg.member.roles.has(roleid))) {
+		// 		msg.reply("You don't have permision to do that. Only administrators or users with a role named \"Poll Creator\"");
+		// 		logger.info(`${msg.author.tag} on ${msg.guild.name} tried to create a poll without permission"`);
+		// 		return;
+		// 	}
+		// } else {
+		// 	isDM = true;
+		// }
 	if(msg.content.startsWith(config.prefix) && msg.content !== config.prefix){
 		const command = msg.content.slice(config.prefix.length);
 		let args = parseToArgs(msg);
@@ -519,7 +554,7 @@ client.on("message", async (msg) => {
 		} else {
 			args[0] = args[0].split(' ').join('');
 		}
-		var words = ["help", "poll", "weekly", "status", "setstatus", "removestatus", "examples", "update", "end", "invite", "donate"];
+		var words = ["help", "poll", "weekly", "status", "setstatus", "setstatuschannel", "removestatus", "examples", "update", "end", "invite", "donate"];
 		if(words.includes(args[0])) {
 		if (commandSyntaxRegex.test(command)) {
 			if (args.length > 0) {
@@ -551,6 +586,11 @@ client.on("message", async (msg) => {
 							setstatus(msg, args);
 						}
 					break;	
+					case "setstatuschannel":
+						if (!isDM) {
+							setstatuschannel(msg, args);
+						}
+					break;
 					case "removestatus":
 						if (!isDM) {
 							removestatus(msg, args);

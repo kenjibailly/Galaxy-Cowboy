@@ -1,6 +1,6 @@
 const Discord = require("discord.js");
 const config = require("./botconfig.json");
-const examplesEmbed = new Discord.RichEmbed()
+const examplesEmbedExec = new Discord.RichEmbed()
 	.setTitle("📖 ┊ Examples of Galaxy Cowboy's commands")
 	.attachFiles(['assets/zep.jpg'])
 	//.setThumbnail("attachment://osalien.jpg")
@@ -23,4 +23,4 @@ const examplesEmbed = new Discord.RichEmbed()
 	.attachFiles(['assets/zep.jpg'])
 	.setFooter("The bot has been created by Zep, leader and founder of Galaxy Cowboys.\nFeel free to report bugs.", 'attachment://zep.jpg')
     .setColor("#DDA0DD");
-module.exports = examples;
+module.exports = examplesEmbedExec;

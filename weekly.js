@@ -67,6 +67,13 @@ class Weekly {
 		return w;
 	}
 	async start(msg) {
+		position = 0;
+		dateDayCollection = [];
+		dateCollection = [];
+		dateEmojiCollection = [];
+		dateEmojiReactCollection = [];
+		dateTextLines = [];
+		reactCountEmojiCollection = [];
 		let date1;
 		if (this.startDate == 0 || this.startDate.length === 0 || this.startDate == null) {
 			date1 = new Date();
@@ -108,13 +115,13 @@ class Weekly {
 				logger.info(error);
 			} 
 			if (i >= dateDayRange -1 || i >= 6) {
-				position = 0;
-				dateDayCollection = [];
-				dateCollection = [];
-				dateEmojiCollection = [];
-				dateEmojiReactCollection = [];
-				dateTextLines = [];
-				reactCountEmojiCollection = [];
+				// position = 0;
+				// dateDayCollection = [];
+				// dateCollection = [];
+				// dateEmojiCollection = [];
+				// dateEmojiReactCollection = [];
+				// dateTextLines = [];
+				// reactCountEmojiCollection = [];
 			}
 		} 
 		return message.id;
