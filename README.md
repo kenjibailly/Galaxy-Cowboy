@@ -21,20 +21,31 @@ You can also use `!poll examples` to see several examples of how to use the bot.
 
 ## Host the bot
 
-To host it create a file name "botconfig.json" or rename and edit "botconfig-sample.json" in the bot's folder. In this file must appear the token of the bot, the prefix ("!poll" by default) and, if wanted, a link to invite.
+To host it rename and edit "botconfig.json" in the bot's folder. In this file must appear the token of the bot, the prefix ("*" by default) and database connection info.
 
 ```json
 {
-	"token":"your token",
-	"prefix":"!poll",
-	"link":"the link to invite the bot (optional)"
+    "CLEARDB_DATABASE_URL": "mysql://dbusername:dbpassword@dbhostname/dbname?reconnect=true",
+    "DATABASE": "Database Name",
+    "HOST": "Database Hostname",
+    "PASSWORD": "Database Password",
+    "prefix": "*",
+    "TOKEN": "Discord Bot Token",
+    "USER": "Database username",
+    "link": "https://discord.com/api/oauth2/authorize?client_id=700457249654571139&permissions=1678113856&scope=bot",
 }
 ```
 
 Then in a command line in the bot's folder use `npm install`.
 
+Attach a mysql database by editing the botconfig.json file.
+
 Now, to start the bot use `node index.js`.
 
-I'm also hosting an instance of the bot you can invite it with this link:
-<https://discordapp.com/api/oauth2/authorize?client_id=509451579678654468&permissions=68672&scope=bot>
-"# Galaxy-Cowboy" 
+Enjoy the bot.
+
+
+I'm also hosting an instance of the bot you can invite it with this link: <https://discordapp.com/api/oauth2/authorize?client_id=509451579678654468&permissions=68672&scope=bot>
+
+
+Support server: <https://discord.gg/nhBtPCG>
