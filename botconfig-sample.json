@@ -6,5 +6,5 @@
     "prefix": "*",
     "TOKEN": "Discord Bot Token",
     "USER": "Database username",
-    "link": "https://discord.com/api/oauth2/authorize?client_id=700457249654571139&permissions=1678113856&scope=bot",
+    "link": "https://discord.com/api/oauth2/authorize?client_id=700457249654571139&permissions=1678113856&scope=bot"
 }
