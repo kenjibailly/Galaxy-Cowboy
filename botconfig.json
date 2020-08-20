@@ -1,0 +1,10 @@
+{
+    "CLEARDB_DATABASE_URL": "mysql://dbusername:dbpassword@dbhostname/dbname?reconnect=true",
+    "DATABASE": "Database Name",
+    "HOST": "Database Hostname",
+    "PASSWORD": "Database Password",
+    "prefix": "*",
+    "TOKEN": "Discord Bot Token",
+    "USER": "Database username",
+    "link": "https://discord.com/api/oauth2/authorize?client_id=700457249654571139&permissions=1678113856&scope=bot",
+}
