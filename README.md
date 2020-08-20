@@ -21,7 +21,7 @@ You can also use `!poll examples` to see several examples of how to use the bot.
 
 ## Host the bot
 
-To host it rename and edit "botconfig.json" in the bot's folder. In this file must appear the token of the bot, the prefix ("*" by default) and database connection info.
+To host it rename and edit "botconfig-sample.json" in the bot's folder. In this file must appear the token of the bot, the prefix ("*" by default) and database connection info.
 
 ```json
 {
