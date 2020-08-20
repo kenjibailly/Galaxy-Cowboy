@@ -1,11 +1,12 @@
 const Discord = require("discord.js");
 const hash = require("string-hash");
-const config = process.env;
-//const config = require("./botconfig.json");
+//const config = process.env;
+const config = require("./botconfig.json");
+const logger = require('./logger.js');
 const numEmojis = ["1⃣", "2⃣", "3⃣", "4⃣", "5⃣", "6⃣", "7⃣", "8⃣", "9⃣", "🔟"];
-var reactEmoji = ["723732274163482673", "723731107471687680", "723732274054561867", "723732274004230175", "723732274012487732", "723732274117476412", "723732273903435827"];
-var dayEmoji = ["<:Sunday:723732274163482673>", "<:Monday:723731107471687680>", "<:Tuesday:723732274054561867>", "<:Wednesay:723732274004230175>", "<:Thursday:723732274012487732>", "<:Friday:723732274117476412>", "<:Saturday:723732273903435827>"];
-var reactCountEmoji = ["Sunday:723732274163482673", "Monday:723731107471687680", "Tuesday:723732274054561867", "Wednesday:723732274004230175", "Thursday:723732274012487732", "Friday:723732274117476412", "Saturday:723732273903435827"];
+var reactEmoji = ["734158773739847800", "734158773740109876", "734158773777727600", "734158773794504765", "734158773874196614", "734158773731459134", "734158773811413112"];
+var dayEmoji = ["<:Sunday:734158773739847800>", "<:Monday:734158773740109876>", "<:Tuesday:734158773777727600>", "<:Wednesday:734158773794504765>", "<:Thursday:734158773874196614>", "<:Friday:734158773731459134>", "<:Saturday:734158773811413112>"];
+var reactCountEmoji = ["Sunday:734158773739847800", "Monday:734158773740109876", "Tuesday:734158773777727600", "Wednesday:734158773794504765", "Thursday:734158773874196614", "Friday:734158773731459134", "Saturday:734158773811413112"];
 var days = ["Sunday", "Monday", "Tuesday", "Wednesday", "Thursday", "Friday", "Saturday"];
 var months = ["January", "February", "March", "April", "May", "June", "July", "August", "September", "October", "November", "December"];
 const handEmojis = ["1⃣", "2⃣", "3⃣", "4⃣", "5⃣", "6⃣", "7⃣"];
@@ -24,6 +25,7 @@ class Weekly {
 	constructor(msg, question, startDate, endDate, weeklyDescription, weeklyType, answers, time, type) {
 		if (msg) { 
 			this.guildId = msg.guild.id;
+			this.userId = msg.member.user.id;
 			this.channelId = msg.channel.id;
 			this.msgId = null;
 			this.question = question;
@@ -45,6 +47,7 @@ class Weekly {
 	static copyConstructor (other) {
 		let w = new Weekly();
 		w.guildId = other.guildId;
+		w.userId = other.userId;
 		w.channelId = other.channelId;
 		w.msgId = other.msgId;
 		w.question = other.question;
@@ -56,7 +59,7 @@ class Weekly {
 		w.createdOn = other.createdOn;
 		w.isTimed = other.isTimed;
 		w.finishTime = other.finishTime;
-		w.hasFinished = other.hasFInished;
+		w.hasFinished = other.hasFinished;
 		w.type = other.type;
 		w.emojis = other.emojis;
 		w.results = other.results;
@@ -64,9 +67,19 @@ class Weekly {
 		return w;
 	}
 	async start(msg) {
-		let date1 = new Date();
+		position = 0;
+		dateDayCollection = [];
+		dateCollection = [];
+		dateEmojiCollection = [];
+		dateEmojiReactCollection = [];
+		dateTextLines = [];
+		reactCountEmojiCollection = [];
+		let date1;
 		if (this.startDate == 0 || this.startDate.length === 0 || this.startDate == null) {
+			date1 = new Date();
 			this.startDate = convertDateFormat(this.incrementDate(date1,0));
+		} else {
+			date1 = new Date(this.startDate);
 		}
 		function convertDateFormat(date) {
 			var Xmas95 = new Date(date);
@@ -94,22 +107,21 @@ class Weekly {
 		if (dateDayRange > 7) {
 			dateDayRange = 7;
 		} else if (dateDayRange < 7) {
-			dateDayRange = dateDayRange +1;
 		}
 		for (let i = 0; i < dateDayRange && i < 7; ++i) {
 			try {
 				await message.react(dateEmojiReactCollection[i]);
 			} catch (error) {
-				console.log(error);
+				logger.info(error);
 			} 
 			if (i >= dateDayRange -1 || i >= 6) {
-				position = 0;
-				dateDayCollection = [];
-				dateCollection = [];
-				dateEmojiCollection = [];
-				dateEmojiReactCollection = [];
-				dateTextLines = [];
-				reactCountEmojiCollection = [];
+				// position = 0;
+				// dateDayCollection = [];
+				// dateCollection = [];
+				// dateEmojiCollection = [];
+				// dateEmojiReactCollection = [];
+				// dateTextLines = [];
+				// reactCountEmojiCollection = [];
 			}
 		} 
 		return message.id;
@@ -165,7 +177,7 @@ class Weekly {
 	}
 	generateEmbed(msg) {
 		let footer = `React with the emojis below | ID: ${this.id}`;
-		if (this.isTimed) footer += ` | This poll ends in ${new Date(this.finishTime).toUTCString()}`;
+		if (this.isTimed) footer += ` | This poll ends on ${new Date(this.finishTime).toUTCString()}`;
 		current_datetime = this.getCurrentDateTime();
 		dateFormatOne = this.convertDayDate(current_datetime);
 		positionStart = this.getPositionStart(current_datetime, dateFormatOne);
@@ -331,7 +343,7 @@ class Weekly {
 		finalResults.forEach((r) => {
 			description += `<:${r.emoji}> - ** ${r.votes} ** - ${r.percentage}% \n`;
 		});
-		let footer = `Results from poll ${this.id} finished on ${new Date(this.finishTime).toUTCString()}`;
+		let footer = `Results from poll ${this.id} finished on ${new Date().toUTCString()}`;
 		let weeklyResultsEmbed = new Discord.RichEmbed()
 			.setAuthor("Results of: " + this.question)
 			.setDescription(description)
@@ -361,6 +373,7 @@ class Weekly {
 		return stringCountEmojiCollection;
 	}
 	getReactCountEmojiCollection() {
+		reactCountEmojiCollection = [];
 		let date1 = new Date();
 		if (this.startDate == 0 || this.startDate.length === 0 || this.startDate == null) {
 			this.startDate = convertDateFormat(this.incrementDate(date1,0));

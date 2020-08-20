@@ -1,92 +1,179 @@
 const Discord = require("discord.js");
-const config = process.env;
-//const config = require("./botconfig.json");
+const winston = require('winston');
+//const config = process.env;
+const config = require("./botconfig.json");
 const Poll = require("./poll.js");
 const Weekly = require("./weekly.js");
 const Update = require("./update.js");
+const Status = require("./status.js");
 const Datastore = require('nedb');
+const finishTimedPolls = require('./functions/finishTimedPolls.js');
+const richPresence = require('./functions/richPresence.js');
+//const removeListedStatuses = require('./functions/removeListedStatuses.js');
+const logger = require('./logger.js');
 var mysql = require('mysql');
 var con = mysql.createPool(config.CLEARDB_DATABASE_URL);
 var inputid;
 var w;
+var typeSet;
+// var statusChannelID = config.statusChannelID;
 const client = new Discord.Client();
 const prefix = String("`"+config.prefix+"`");
-const commandSyntaxRegex = /(help)|(poll\s(time=\d+([smhd]?\s))?("[^"\n]+"\s?){1,11})|(weekly\s(time=\d+([smhd]?\s))?("[^"\n]+"\s?){1,11})|(update\s\d+)|(examples)|(end\s\d+)|(invite)$/;
+const commandSyntaxRegex = /(help)|(poll\s(time=\d+([smhd]?\s))?("[^"\n]+"\s?){1,11})|(weekly\s(time=\d+([smhd]?\s))?("[^"\n]+"\s?){1,11})|(status?)|(setstatuschannel?)|(removestatus)|(setstatus\s(time=\d+([smhd]?\s))?("[^"\n]+"\s?){1,11})|(update\s\d+)|(examples)|(end\s\d+)|(invite)|(donate)$/;
 const prefixSyntaxRegex = new RegExp(`^[${config.prefix}]`);
-const helpEmbed = new Discord.RichEmbed()
-	.setTitle("Galaxy Cowboys's Commands")
-	.attachFiles(['./assets/zep.jpg', './assets/osalien.jpg'])
-	.setThumbnail("attachment://osalien.jpg")
-	.addBlankField()
-	.addField("Create Weekly Poll", `\`${config.prefix}weekly "Title" "Starting Date" "Ending Date"\``+"\nFormat: YYYY-MM-DD format\ndates are optional fields, default starts today, ends in 7 days")
-	.addField("Create Weekly Custom Poll", `\`${config.prefix} After weekly "Title" "start date" "end date" you can put "Custom Description"\``)
-	.addField("Create Y/N poll", `\`${config.prefix}poll "Question"\``)
-	.addField("Create complex poll [2-10 answers]", `\`${config.prefix}poll "Question" "Option 1" "Option 2" ["Option 3" ...]\` (quotes are necessary)`)
-	.addField("Timed polls that close automatically", `\`${config.prefix}{weekly/poll} time=X{s|m|h|d} ...\`\nX = length + secons, minutes, hours, days. 
-	This can be added in all polls before "Poll Question / Weekly Title"`)
-	.addField("See results of a poll and close the voting", `\`${config.prefix} end ID\`\nwhere ID is the poll id wich
-		appears at the end of the poll`)
-	.addField("See examples", `\`${config.prefix} examples\``)
-	.addBlankField()
-	.addField("About", "The bot has been created by Zep, leader and founder of Galaxy Cowboys. Feel free to report bugs.")
-	.setFooter("Credits to Zheoni for being able to use the source code of [here](http://github.com/Zheoni/VotaBot) and make this happen", 'attachment://zep.jpg')
-	.setColor("#DDA0DD");
-const examplesEmbed = new Discord.RichEmbed()
-	.setTitle("Examples of VotaBot's commands")
-	.attachFiles(['./assets/zep.jpg', './assets/osalien.jpg'])
-	.setThumbnail("attachment://osalien.jpg")
-	.addBlankField()
-	.addField("Weekly Poll", `\`${config.prefix}weekly "Title" "2020-06-22" "2020-06-28"\``)
-	.addField("Custom Weekly Poll", `\`${config.prefix}weekly "Title" "2020-06-22" "2020-06-28" "Custom Description"\``)
-	.addField("Custom Weekly Poll without dates", `\`${config.prefix}weekly "Title" "2020-06-22" "2020-06-28" "Custom Description" "no dates"\``)
-	.addField("Y/N Poll", `\`${config.prefix}poll "Do you like this?"\``)
-	.addField("Complex poll", `\`${config.prefix}poll "What do you wanna play?" "GW2" "GW2!" "GW2!!"\``)
-	.addField("Timed Weekly Poll", `\`${config.prefix}weekly time=7d "Title"\``)
-	.addField("Timed Poll", `\`${config.prefix}poll time=6h "Chat tonight?"\``)
-	.addField("See the results of a poll", `\`${config.prefix}poll end 61342378\``)
-	.addBlankField()
-	.attachFiles(['./assets/zep.jpg'])
-	.setFooter("The bot has been created by Zep, leader and founder of Galaxy Cowboys.\nFeel free to report bugs.", 'attachment://zep.jpg')
-	.setColor("#DDA0DD");
-const weeklyEmbed = new Discord.RichEmbed()
-	.setAuthor("Galaxy Zep")
-	.setDescription("<:Monday:723595665325948929>"+"Monday")
-	.addField(":Tuesday:", `\`Tuesday\``)
-	.addField(":Wednesday:", `\`Wednesday\``)
-	.addField(":Thursday:", `\`Thursday\``)
-	.setColor("#DDA0DD");
+const helpEmbed = require('./help.js');
+const examplesEmbed = require('./examples.js');
+let donateEmbed = require('./donate.js');
 let database = new Datastore('database.db');
 database.loadDatabase();
 database.persistence.setAutocompactionInterval(3600000);
-async function finishTimedPolls() {
-	const now = Date.now()
-	database.find({ isTimed: true, finishTime: { $lte: now } }, (err, dbps) => {
-		if (err) console.error(err);
-		dbps.forEach((dbp) => {
-			const p = Poll.copyConstructor(dbp);
-			const w = Weekly.copyConstructor(dbp);
-			if (p instanceof Poll && p.isTimed && p.finishTime <= now) {
-				p.finish(client);
-				database.remove({ id: p.id });
-			}
-			if (w instanceof Weekly && w.isTimed && w.finishTime <= now) {
-				w.finish(client);
-				database.remove({ id: w.id });
+client.on('ready', () => logger.log('info', 'The bot is online!'));
+client.on('debug', m => logger.log('debug', m));
+client.on('warn', m => logger.log('warn', m));
+client.on('error', m => logger.log('error', m));
+process.on('uncaughtException', error => logger.error(error.stack));
+async function autoremoveListedStatuses() {
+	con.query("SELECT * FROM statuses", function (err, db, fields) {
+		if (err) throw err;
+	let now = Date.now()
+		db.forEach((dbp) => {
+			let s = Status.copyConstructor(dbp);
+			if (s instanceof Status && s.isTimed && s.finishTime <= now) {
+				//s.hasFinished = false;
+				  if (s) {
+					removeStatuses(s);
+						  var sql = "DELETE FROM statuses WHERE id = '"+s.id+"'";
+						  con.query(sql, function (err, result) {
+							if (err) throw err;
+							logger.info("Number of records deleted: " + result.affectedRows);
+						  });
+			  } else {
+				logger.info("Cannot find the status.");
+				  }
 			}
 		});
 	});
 }
+//////////////////////////////////////
+// SHOW ALL STATUSES IN CHANNEL
+//////////////////////////////////////
+async function showAllStatuses() {
+	let resultsLength;
+	let db;
+	let  getInformationFromDB = function(callback) {
+		con.query("SELECT * FROM statuses WHERE displayed != 'true'", function (err, dbp, fields) {
+			if (err) throw err;
+				resultsLength = dbp.length;
+				db = dbp;
+				callback(null, db);
+		});
+	}
+	getInformationFromDB(function (err, result) {
+		if (err) logger.info("Database error!");
+		else 
+		//logger.info(resultsLength);
+		for (let i = 0; i < resultsLength; i++) {
+			let s = Status.copyConstructor(db[i]);
+			updateStatuses(s);
+		}
+	  });
+}
+async function updateStatuses(s){
+	await s.displayAllStatuses(s, client);
+	console.log("s.msgId: "+s.msgId);
+	//ToDo: fetch msgId of posted status 
+	// var sql = `UPDATE statuses SET displayed = "true", msgId = '${s.msgId}' WHERE id = '${s.id}'`;
+	// con.query(sql, function (err, result) {
+	// 	if (err)
+	// 		throw err;
+	// 	logger.info("1 record updated");
+	// });
+}
+//////////////////////////////////////
+// REMOVE FINISHED STATUSES IN CHANNEL
+//////////////////////////////////////
+async function removeStatuses(s) {
+	// foreach channels or what is s?
+	con.query(`SELECT * FROM statusChannelIDs WHERE guildId = ${s.guildId} `, function (err, dbp, fields) {
+		if (err) throw err;
+		dbp.forEach((db) => {
+			statusChannelID = db.statusChannelID;
+			let channel = client.channels.get(statusChannelID);
+			// console.log("db.statusChannelID:");
+			// console.log(db.statusChannelID);
+			// console.log("channel:");
+			// console.log(channel);
+			channel.fetchMessage(s.msgId).then(msg => {
+					//const fetchedMsg = msg.first();
+					msg.delete();
+					logger.info("1 Fetched message deleted");
+					var sql = "DELETE FROM statuses WHERE id = '"+s.id+"'";
+						  con.query(sql, function (err, result) {
+							if (err) throw err;
+							logger.info("Number of records deleted: " + result.affectedRows);
+							console.log(s);
+							client.users.get(s.userId).send("Status removed.");
+					});
+			});
+		});
+	});
+
+}
+//////////////////////////////////////
+// REMOVE STATUS COMMAND
+//////////////////////////////////////
+async function removestatus(msg) {
+	await removeListedStatuses(msg);
+	// var sql = `DELETE FROM statuses WHERE userId = '${msg.member.user.id}'`;
+	// 	con.query(sql, function (err, result) {
+	// 	if (err)
+	// 		throw err;
+	// 	if (result.affectedRows >= 1) {
+	// 		msg.reply("Status removed");
+	// 		logger.info("Statuses removed: " + result.affectedRows);
+	// 	}
+	// 	else {
+	// 		msg.reply("No status found to be removed");
+	// 	}
+	// });
+}
+async function removeListedStatuses(msg) {
+	con.query(`SELECT * FROM statuses WHERE userId = '${msg.member.user.id}'`, function (err, db, fields) {
+		if (err) throw err;
+		let now = Date.now()
+		db.forEach((dbp) => {
+			let s = Status.copyConstructor(dbp);
+			// if (s instanceof Status && s.isTimed && s.finishTime <= now) {
+			if (s instanceof Status) {
+				//s.hasFinished = false;
+				  if (s) {
+						//   var sql = "DELETE FROM statuses WHERE id = '"+s.id+"'";
+						//   con.query(sql, function (err, result) {
+						// 	if (err) throw err;
+							removeStatuses(s);
+						// 	logger.info("Number of records deleted: " + result.affectedRows);
+						//   });
+			  } else {
+				logger.info("Cannot find the status.");
+				  }
+			}
+		});
+	});
+}
+//////////////////////////////////////
+// CREATE POLLS
+//////////////////////////////////////
 async function poll(msg, args) {
-	const timeToVote = await parseTime(msg, args);
-	const question = args[1];
+	var question = args[1];
 	let answers = [];
 	let type;
+	let timeToVote = parseTime(msg, args);
 	switch (args.length) {
 		case 0:
 			msg.reply("You cannot create a poll with no question");
 			return;
 		case 1:
-			console.log("case 1 triggered in poll");
+			logger.info("case 1 triggered in poll");
 			break;
 		case 2:
 			answers = ["", ""];
@@ -97,14 +184,29 @@ async function poll(msg, args) {
 			type = "default";
 			break;
 	}
+	if (args[1].includes("time")) {
+		var argsSpliced = args.slice(2,args.length);
+		var question = argsSpliced[0];
+		if (args.length === 3) {
+			type = "yn";
+		}
+	} 
 	args.splice(0,2);
-	const p = await new Poll(msg, question, answers, timeToVote, type);
+	const p = new Poll(msg, question, answers, timeToVote, type);
 	await p.start(msg);
 	if (p.hasFinished == false) {
-		database.insert(p);
-		// maybe we can get a duplicated id...
+		p.emojis = p.emojis.toString();
+		var insertValues = p.id+"','"+p.userId+"', '"+p.guildId+"', '"+p.channelId+"', '"+p.msgId+"', '"+p.question+"', '', '', '', '', '"+p.createdOn+"', '"+p.isTimed+"', '"+p.hasFinished+"', '"+p.finishTime+"', '"+p.type+"', '"+p.emojis+"', '"+p.results;
+		var sql = "INSERT INTO polls (id, userId, guildId, channelId, msgId, question, startDate, endDate, weeklyDescription, answers, createdOn, isTimed, hasFinished, finishTime, type, emojis, results) VALUES ('"+insertValues+"')";
+		con.query(sql, function (err, result) {
+		  if (err) throw err;
+		  logger.info("1 record inserted");
+		});
 	}
 }
+//////////////////////////////////////
+// CREATE WEEKLY POLLS
+//////////////////////////////////////
 async function weekly(msg, args) {
 	var question = args[1];
 	let endDate = [];
@@ -134,72 +236,205 @@ async function weekly(msg, args) {
 		weeklyDescription = argsSpliced[3];
 	} 
 	let answers = [];
-	let type;
-	switch (args.length) {
-		case 0:
-			msg.reply("You cannot create a poll without a question");
-			return;
-		case 1:
-			answers = ["", ""];
-			type = "yn";
-			break;
-		default:
-			answers = args;
-			type = "yn";
-			break;
-	}
-	let timeToVote = await parseTime(msg, args);
-	const w = await new Weekly(msg, question, startDate, endDate, weeklyDescription, weeklyType, answers, timeToVote, type);
+	let type = "weekly";
+	let timeToVote = parseTime(msg, args);
+	const w = new Weekly(msg, question, startDate, endDate, weeklyDescription, weeklyType, answers, timeToVote, type);
 	await w.start(msg);
 	if (w.hasFinished == false) {
 			w.emojis = (await w.emojis).toString();
-			var insertValues = w.id+"', '"+w.guildId+"', '"+w.channelId+"', '"+w.msgId+"', '"+w.question+"', '"+w.startDate+"', '"+w.endDate+"', '"+w.weeklyDescription+"', '"+w.answers+"', '"+w.createdOn+"', '"+w.isTimed+"', '"+w.hasFinished+"', '"+w.finishTime+"', '"+w.type+"', '"+w.emojis+"', '"+w.results;
-			var sql = "INSERT INTO polls (id, guildId, channelId, msgId, question, startDate, endDate, weeklyDescription, answers, createdOn, isTimed, hasFinished, finishTime, type, emojis, results) VALUES ('"+insertValues+"')";
+			var insertValues = `${w.id}','${w.userId}', '${w.guildId}', '${w.channelId}', '${w.msgId}', '${w.question}', '${w.startDate}', '${w.endDate}', '${w.weeklyDescription}', '${w.answers}', '${w.createdOn}', '${w.isTimed}', '${w.hasFinished}', '${w.finishTime}', '${w.type}', '${w.emojis}', '${w.results}`;
+			var sql = "INSERT INTO polls (id, userId, guildId, channelId, msgId, question, startDate, endDate, weeklyDescription, answers, createdOn, isTimed, hasFinished, finishTime, type, emojis, results) VALUES ('"+insertValues+"')";
 			con.query(sql, function (err, result) {
 			  if (err) throw err;
-			  console.log("1 record inserted");
+			  logger.info("1 record inserted");
 			});
 	}
 }
+//////////////////////////////////////
+// SET STATUS
+//////////////////////////////////////
+async function setstatus(msg, args) {
+	var status;
+	var argsSpliced;
+	typeSet = "set";
+	if (args[1].includes("time")) {
+		argsSpliced = args.slice(2,args.length);
+			status = args[2];
+	} else {
+		argsSpliced = args.slice(1,args.length);
+		status = args[1]
+	}
+	let type = "Vacation";
+	let timeToVote = parseTime(msg, args);
+	con.query(`SELECT * FROM statuses WHERE userId = '${msg.member.user.id}' AND guildId = '${msg.guild.id}'`, function (err, dbp, fields) {
+		if (err) throw err;
+		if(dbp.length < 1){
+			const s = new Status(msg, status, timeToVote, type, typeSet);
+			s.start(msg);
+			if (s.hasFinished == false) {
+				var insertValues = s.userId+"', '"+s.guildId+"', '"+s.channelId+"', '"+s.msgId+"', '"+s.status+"', '"+s.createdOn+"', '"+s.isTimed+"', '"+s.hasFinished+"', '"+s.finishTime.getTime()+"', '"+s.type+"', '"+s.displayed;
+				var sql = "INSERT INTO statuses (userId, guildId, channelId, msgId, status, createdOn, isTimed, hasFinished, finishTime, type, displayed) VALUES ('"+insertValues+"')";
+				con.query(sql, function (err, result) {
+				if (err) throw err;
+				logger.info("1 record inserted");
+				});
+			}
+		} else {
+			msg.reply("You already have a status set. Remove your status first.");
+		}
+	});
+}
+
+//////////////////////////////////////
+// SET STATUS CHANNEL
+//////////////////////////////////////
+async function setstatuschannel (msg, args) {
+	if (msg.member.hasPermission('ADMINISTRATOR')) {
+		con.query("SELECT * FROM statusChannelIDs", function (err, db, fields) {
+			if (err) throw err;
+			statusChannelID = args[1].replace(/\D/g,'');
+			var dbp;
+			db.forEach((dbps) => {
+				dbp = dbps;
+			});
+				if(dbp.guildId === msg.guild.id) {
+					// var insertValues = `${statusChannelID}', '${msg.guild.id}', '${msg.member.user.id}', '${msg.channel.id}', '${msg.id}', ${msg.member.user.tag}`;
+					var sql = `UPDATE statusChannelIDs SET statusChannelID = ${statusChannelID}, guildId = ${msg.guild.id}, userId = ${msg.member.user.id}, channelId = ${msg.channel.id}, msgId = ${msg.id}, userName = "${msg.member.user.tag}" WHERE guildId = ${msg.guild.id}`;
+						con.query(sql, function (err, result) {
+						if (err) throw err;
+						logger.info("1 record updated");
+						msg.reply(`Status Channel updated to <#${statusChannelID}>`);
+					});
+				} else {
+					var insertValues = `${statusChannelID}', '${msg.guild.id}', '${msg.member.user.id}', '${msg.channel.id}', '${msg.id}', '${msg.member.user.tag}`;
+					var sql = `INSERT INTO statusChannelIDs (statusChannelID, guildId, userId, channelId, msgId, userName) VALUES ('${insertValues}')`;
+						con.query(sql, function (err, result) {
+						if (err) throw err;
+						logger.info("1 record inserted");
+						msg.reply(`Status Channel Set to <#${statusChannelID}>`);
+					});
+				}
+		});
+	} else {
+		msg.reply(`You do not have admin rights.`);
+	}
+}
+
+//////////////////////////////////////
+// LOOKUP STATUS
+//////////////////////////////////////
+async function status(msg, args) {
+	var status;
+	var argsSpliced;
+	typeSet = "lookup";
+	if (args[1].includes("time")) {
+		argsSpliced = args.slice(2,args.length);
+			status = args[2];
+	} else {
+		argsSpliced = args.slice(1,args.length);
+		status = args[1]
+	}
+	var inputUserId = args[1].split('<@!').join('').split('>').join('');
+		con.query("SELECT * FROM statuses WHERE userId = '"+inputUserId+"'", function (err, dbp, fields) {
+			if (err) throw err;
+			if(dbp.length !== 0){
+					s = Status.copyConstructor(dbp[0]);
+					s.hasFinished = false;
+					if (s) {
+						s.display(client, msg);
+						} else {
+							msg.reply("Cannot find the user.");
+						}
+				} else {
+					notFound(msg);
+				}
+		  logger.info("1 record searched");
+		});
+}
+   async function notFound(msg) {
+        message = await msg.channel.send({ embed: generateEmbedLookupNotFound() })
+	}
+	function generateEmbedLookupNotFound(msg) {
+        let footer = `Thank you for your notice`;
+        if (this.isTimed) footer += ` | This status ends on ${new Date(this.finishTime).toUTCString()}`;
+		let embed = new Discord.RichEmbed()
+			.setTitle(`<:status:734954957777928324> ┊ Status Enabler`)
+			.setDescription(`<:offnight:734894950260670475> This user has no status enabled`)
+			.setColor("#d596ff")
+			.setFooter(footer, "https://cdn1.vectorstock.com/i/1000x1000/57/80/ufo-neon-sign-design-template-aliens-neon-vector-26235780.jpg");
+		return embed;
+	}
+//////////////////////////////////////
+// END POLL WITH ID
+//////////////////////////////////////
 async function end(msg, args) {
 	inputid = Number(args[1]);
 	con.query("SELECT * FROM polls WHERE id = '"+inputid+"'", function (err, dbp, fields) {
-		  if (err) throw err;
-		  w = Weekly.copyConstructor(dbp[0]);
-		  w.answers = w.answers.split(',');
-		  w.emojis = w.emojis.split(',');
-		  w.results = w.results.split(',');
-		  w.hasFinished = false;
-			if (w) {
-					w.finish(client);
-					var sql = "DELETE FROM polls WHERE id = '"+w.id+"'";
-					con.query(sql, function (err, result) {
-					  if (err) throw err;
-					  console.log("Number of records deleted: " + result.affectedRows);
-					});
-		} else {
-				msg.reply("Cannot find the poll.");
+		if (err) throw err;
+		  if(dbp.length !== 0){
+			if(dbp[0].type == "yn" || dbp[0].type == "default") {
+				p = Poll.copyConstructor(dbp[0]);
+				p.answers = p.answers.split(',');
+				p.emojis = p.emojis.split(',');
+				p.results = p.results.split(',');
+				p.hasFinished = false;
+				if (p) {
+					if(p.userId === msg.member.user.id || msg.member.roles.has("249528962433286144") || msg.member.roles.has("702647763665551411")){
+							p.finish(client, p);
+							var sql = "DELETE FROM polls WHERE id = '"+p.id+"'";
+								con.query(sql, function (err, result) {
+								if (err) throw err;
+									logger.info("Number of records deleted: " + result.affectedRows);
+								});
+					} else {
+						msg.reply("You're not the creator of the poll.");
+					}
+					} else {
+						msg.reply("Cannot find the poll.");
+					}
+			}else {
+				w = Weekly.copyConstructor(dbp[0]);
+				w.answers = w.answers.split(',');
+				w.emojis = w.emojis.split(',');
+				w.results = w.results.split(',');
+				w.hasFinished = false;
+				if (w) {
+					if(w.userId === msg.member.user.id || msg.member.roles.has("249528962433286144") || msg.member.roles.has("702647763665551411")){
+							w.finish(client);
+							var sql = "DELETE FROM polls WHERE id = '"+w.id+"'";
+								con.query(sql, function (err, result) {
+								if (err) throw err;
+									logger.info("Number of records deleted: " + result.affectedRows);
+								});
+					} else {
+						msg.reply("You're not the creator of the poll.");
+					}
+					} else {
+						msg.reply("Cannot find the poll.");
+					}
 			}
+		 }
 		});
 }
+//////////////////////////////////////
+// UPDATE POLL EMBED MESSAGE
+//////////////////////////////////////
 async function updateWeekly(msg, args) {
 	let u = new Update(msg);
-
 	inputid = Number(args[1]);
 	con.query("SELECT * FROM polls WHERE id = '"+inputid+"'", function (err, dbp, fields) {
 		if (err) throw err;
-
-		w = Weekly.copyConstructor(dbp[0]);
-		w.hasFinished = false;
-		if (w) {
-			u.start(msg, w);
-		} else {
-				msg.reply("Cannot find the poll.");
+		if(dbp.length !== 0){
+			w = Weekly.copyConstructor(dbp[0]);
+			w.hasFinished = false;
+			if (w) {
+				logger.info("hey");
+				u.start(msg, w);
+			} else {
+					msg.reply("Cannot find the poll.");
+			}
 		}
-	});
-
-	
-	
+		});
 }
 function parseTime(msg, args) {
 	let time = 0;
@@ -229,15 +464,26 @@ function parseTime(msg, args) {
 				break;
 			default: time *= 60000;
 		}
+	} else {
+		time = "";
 	}
-	if (time > 604800000) return 604800000;
-	else return time;
+	// if (time > 604800000) return 604800000;
+	return time;
 }
+//////////////////////////////////////
+// ARGS ARE DEFINED PER COMMAND
+//////////////////////////////////////
 function parseToArgs(msg) {
 	let args = msg.content.slice(config.prefix.length)
 		.trim()
 		.split("\"")
 		.filter((phrase) => phrase.trim() !== "");
+	if (args[0].startsWith("status")) {
+		args[0] = args[0].trim();
+		let aux = args[0];
+		aux = aux.split(' ');
+		return aux;
+	}
 	if (args[0].startsWith("weekly")) {
 		if (args.length == 4) {
 			startDate = args[3];
@@ -264,76 +510,55 @@ function parseToArgs(msg) {
 	}
 	return args;
 }
-function cleanDatabase() {
-	console.log("Cleaning the database...");
-	const aWeekAgo = Date.now() - 604800000;
-	database.remove({ createdOn: { $lt: aWeekAgo } }, { multi: true }, (err, n) => console.log(n + " entries removed."));
+
+async function finishTimedPollsExecute () {
+	finishTimedPolls.finishTimedPollsExec(client);
 }
+//////////////////////////////////////
+// BOT STATUS IN CHAT PANEL + REGEX VALIDATION COMMANDS SWITCH
+//////////////////////////////////////
 client.on("ready", () => {
-	console.log(`Bot logged in as ${client.user.tag}!`);
-	var discordActivity = delay =>
-	setTimeout(() => {
-		var discordActivityStatus;
-		var discordActivityType;
-		switch (delay) {
-			case 1:
-				discordActivityStatus = `${config.prefix}help`;
-				discordActivityType = "WATCHING";
-				break;
-			case 2:
-				discordActivityStatus = `${config.prefix}examples`;
-				discordActivityType = "WATCHING";
-				break;
-			case 3:
-				discordActivityStatus = "Guild Wars 2";
-				discordActivityType = "PLAYING";
-				break;
-			default:
-				discordActivityStatus = "Hey, test me out!";
-				discordActivityType = "LISTENING";
-				break;
-		}
-		if (delay > 3) {
-			delay = 0;
-		}
-		client.user.setActivity(`${discordActivityStatus}`, { type: discordActivityType});
-		discordActivity(delay +1);
-	}, delay * 5000);
-	discordActivity(1);
-	setInterval(finishTimedPolls, 10000);
-	setInterval(cleanDatabase, 86400000);
-	setInterval(() => console.log("The bot is in " + client.guilds.size + " guild(s)"), 1800000); // logging info
+	logger.info(`Bot logged in as ${client.user.tag}!`);
+	richPresence.activity(client);
+	setInterval(finishTimedPollsExecute, 10000);
+	setInterval(autoremoveListedStatuses, 10000);
+	setInterval(showAllStatuses, 10000);
+	setInterval(() => logger.info("The bot is in " + client.guilds.size + " guild(s)"), 1800000); // logging info
 });
+
 client.on("message", async (msg) => {
 	if (msg.content.startsWith(config.prefix) && !msg.author.bot) {
 		let isDM = false, dmChannel;
-		if (msg.channel.type === "text" || msg.channel.type === "news") {
-			let role;
-			let roleid = -1;
-			try {
-				role = await msg.guild.roles.find((r) => r.name === "Raid Sheriff 👹");
-				if (role) roleid = role.id;
-			} catch (error) {
-				console.error(error);
-			}
-			if (!(msg.member.hasPermission("SEND_MESSAGES") || msg.member.roles.has(roleid))) {
-				msg.reply("You don't have permision to do that. Only administrators or users with a role named \"Poll Creator\"");
-				console.log(`${msg.author.tag} on ${msg.guild.name} tried to create a poll without permission"`);
-				return;
-			}
-		} else {
-			isDM = true;
-		}
+		// if (msg.channel.type === "text" || msg.channel.type === "news") {
+		// 	let role;
+		// 	let roleid = -1;
+		// 	try {
+		// 		role = msg.guild.roles.find((r) => r.name === "Raid Sheriff 👹");
+		// 		if (role) roleid = role.id;
+		// 	} catch (error) {
+		// 		console.error(error);
+		// 	}
+		// 	if (!(msg.member.hasPermission("SEND_MESSAGES") || msg.member.roles.has(roleid))) {
+		// 		msg.reply("You don't have permision to do that. Only administrators or users with a role named \"Poll Creator\"");
+		// 		logger.info(`${msg.author.tag} on ${msg.guild.name} tried to create a poll without permission"`);
+		// 		return;
+		// 	}
+		// } else {
+		// 	isDM = true;
+		// }
 	if(msg.content.startsWith(config.prefix) && msg.content !== config.prefix){
 		const command = msg.content.slice(config.prefix.length);
 		let args = parseToArgs(msg);
-		var words = ["help", "poll ", "weekly", "examples", "update", "end", "invite"];
+		if (args[0].includes('@')) {
+			args[0] = args[0].split(' ').join('');
+		} else {
+			args[0] = args[0].split(' ').join('');
+		}
+		var words = ["help", "poll", "weekly", "status", "setstatus", "setstatuschannel", "removestatus", "examples", "update", "end", "invite", "donate"];
 		if(words.includes(args[0])) {
 		if (commandSyntaxRegex.test(command)) {
-			
 			if (args.length > 0) {
 				args[0] = String(args[0]);
-				
 				switch (args[0]) {
 					case "help":
 						dmChannel = await msg.author.createDM();
@@ -343,11 +568,34 @@ client.on("message", async (msg) => {
 						dmChannel = await msg.author.createDM();
 						dmChannel.send({ embed: examplesEmbed });
 						break;
+					case "donate":
+						msg.reply({ embed: donateEmbed});
+						break;
 					case "weekly":
 						if (!isDM) {
 							weekly(msg, args);
 						}
 					break;
+					case "status":
+						if (!isDM) {
+							status(msg, args);
+						}
+					break;
+					case "setstatus":
+						if (!isDM) {
+							setstatus(msg, args);
+						}
+					break;	
+					case "setstatuschannel":
+						if (!isDM) {
+							setstatuschannel(msg, args);
+						}
+					break;
+					case "removestatus":
+						if (!isDM) {
+							removestatus(msg, args);
+						}
+					break;							
 					case "update":
 						if (!isDM) {
 							updateWeekly(msg, args);
@@ -360,12 +608,12 @@ client.on("message", async (msg) => {
 						break;
 					case "invite":
 						if (config.link) {
-							msg.reply(`This is the link to invite me to another server! ${config.link}`);
+							msg.reply(`This is the link to invite me to another server!\n${config.link}`);
 						} else {
 							msg.reply("The link is not available in this moment.");
 						}
 						break;
-					case "poll ":
+					case "poll":
 						if (!isDM) {
 							poll(msg, args);
 						}
@@ -388,4 +636,4 @@ client.on("message", async (msg) => {
 	}
 });
 client.on("error", console.error);
-client.login(config.TOKEN).then((token) => console.log("Logged in successfully")).catch(console.error);
+client.login(config.TOKEN).then((token) => logger.info("Logged in successfully")).catch(console.error);

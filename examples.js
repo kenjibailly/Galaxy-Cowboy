@@ -1,0 +1,26 @@
+const Discord = require("discord.js");
+const config = require("./botconfig.json");
+const examplesEmbedExec = new Discord.RichEmbed()
+	.setTitle("📖 ┊ Examples of Galaxy Cowboy's commands")
+	.attachFiles(['assets/zep.jpg'])
+	//.setThumbnail("attachment://osalien.jpg")
+	.addBlankField()
+	.addField("<:gcstar:730505901529759784> Weekly Poll", `\`${config.prefix}weekly "Title" "2020-06-22" "2020-06-28"\``)
+	.addField("<:gcstar:730505901529759784> Custom Weekly Poll", `\`${config.prefix}weekly "Title" "2020-06-22" "2020-06-28" "Custom Description"\``)
+	.addField("<:gcstar:730505901529759784> Custom Weekly Poll without dates", `\`${config.prefix}weekly "Title" "2020-06-22" "2020-06-28" "Custom Description" "no dates"\``)
+	.addField("<:gcstar:730505901529759784> Y/N Poll", `\`${config.prefix}poll "Do you like this?"\``)
+	.addField("<:gcstar:730505901529759784> Complex poll", `\`${config.prefix}poll "Which event do you want?" "Strikes" "Fractals" "Raid"\``)
+	.addField("<:gcstar:730505901529759784> Timed Weekly Poll", `\`${config.prefix}weekly time=7d "Which day are you free?"\``)
+	.addField("<:gcstar:730505901529759784> Timed Poll", `\`${config.prefix}poll time=6h "GW2 tonight?"\``)
+	.addField("<:gcstar:730505901529759784> See the results of a poll", `\`${config.prefix}end 61342378\``)
+	.addField("<:gcstar:730505901529759784> Call to action Weekly Poll", `\`${config.prefix}update 61342378\``)
+	.addBlankField()
+	.addField("<:gcstar:730505901529759784>	Set status", `\`${config.prefix}setstatus "Playing GW2"\`\nSet your custom status`)
+	.addField("<:gcstar:730505901529759784>	Set timed status", `\`${config.prefix}setstatus time=3d "Out for the weekend"\`\nSet your custom timed status`)
+	.addField("<:gcstar:730505901529759784>	Set timed status", `\`${config.prefix}removestatus\`\nRemove your current status`)
+	.addField("<:gcstar:730505901529759784>	Set timed status", `\`${config.prefix}status\` <@!190932547184623616>\nCheck status of user`)
+	.addBlankField()
+	.attachFiles(['assets/zep.jpg'])
+	.setFooter("The bot has been created by Zep, leader and founder of Galaxy Cowboys.\nFeel free to report bugs.", 'attachment://zep.jpg')
+    .setColor("#DDA0DD");
+module.exports = examplesEmbedExec;
