@@ -46,16 +46,6 @@ class Status {
 	}
     async display(client, msg) {
 		const now = new Date();
-		// const message = await this.getWeeklyMessage(client);
-		// if (!message) {
-		// 	console.error("Cant find poll message");
-		// 	return;
-		// }
-		// if (message.embeds.length < 1) {
-		// 	console.error("The poll message has no embeds.");
-		// 	return;
-		// }
-		//this.hasFinished = true;
 		message = await msg.channel.send({ embed: this.generateEmbedLookup() })
 	}
 	async start(msg) {
@@ -79,7 +69,6 @@ class Status {
     generateEmbedLookup(msg) {
 		let description = new String();
         let totalVotes = 0;
-		//this.results.forEach((status) => totalVotes += status);
 		if (totalVotes == 0) totalVotes = 1;
 		let finalResults = [];
 		for (let i = 0; i < 2; i++) {
@@ -112,10 +101,8 @@ class Status {
 		con.query(`SELECT * FROM statusChannelIDs WHERE guildId = '${this.guildId}'`, function (err, db, fields) {
 			if (err) throw err;
 			db.forEach((dbp) => {
-				console.log("dbp.statusChannelID: "+dbp.statusChannelID);
 				let sent = client.channels.get(dbp.statusChannelID).send({ embed: generateEmbedAllStatuses() }).then(sent => {
 				this.msgId = sent.id;
-				
 				var sql = `UPDATE statuses SET displayed = "true", msgId = '${this.msgId}' WHERE id = '${s.id}'`;
 				con.query(sql, function (err, result) {
 				if (err)

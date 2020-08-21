@@ -1,6 +1,5 @@
 const Discord = require("discord.js");
 const winston = require('winston');
-//const config = process.env;
 const config = require("./botconfig.json");
 const Poll = require("./poll.js");
 const Weekly = require("./weekly.js");
@@ -9,14 +8,15 @@ const Status = require("./status.js");
 const Datastore = require('nedb');
 const finishTimedPolls = require('./functions/finishTimedPolls.js');
 const richPresence = require('./functions/richPresence.js');
-//const removeListedStatuses = require('./functions/removeListedStatuses.js');
+const removeStatus = require('./functions/removeStatuses.js');
+const showAllStatus = require('./functions/showAllStatuses.js');
+const setStatusChannel = require('./functions/setStatusChannel.js');
 const logger = require('./logger.js');
 var mysql = require('mysql');
 var con = mysql.createPool(config.CLEARDB_DATABASE_URL);
 var inputid;
 var w;
 var typeSet;
-// var statusChannelID = config.statusChannelID;
 const client = new Discord.Client();
 const prefix = String("`"+config.prefix+"`");
 const commandSyntaxRegex = /(help)|(poll\s(time=\d+([smhd]?\s))?("[^"\n]+"\s?){1,11})|(weekly\s(time=\d+([smhd]?\s))?("[^"\n]+"\s?){1,11})|(status?)|(setstatuschannel?)|(removestatus)|(setstatus\s(time=\d+([smhd]?\s))?("[^"\n]+"\s?){1,11})|(update\s\d+)|(examples)|(end\s\d+)|(invite)|(donate)$/;
@@ -32,133 +32,33 @@ client.on('debug', m => logger.log('debug', m));
 client.on('warn', m => logger.log('warn', m));
 client.on('error', m => logger.log('error', m));
 process.on('uncaughtException', error => logger.error(error.stack));
+
 async function autoremoveListedStatuses() {
-	con.query("SELECT * FROM statuses", function (err, db, fields) {
-		if (err) throw err;
-	let now = Date.now()
-		db.forEach((dbp) => {
-			let s = Status.copyConstructor(dbp);
-			if (s instanceof Status && s.isTimed && s.finishTime <= now) {
-				//s.hasFinished = false;
-				  if (s) {
-					removeStatuses(s);
-						  var sql = "DELETE FROM statuses WHERE id = '"+s.id+"'";
-						  con.query(sql, function (err, result) {
-							if (err) throw err;
-							logger.info("Number of records deleted: " + result.affectedRows);
-						  });
-			  } else {
-				logger.info("Cannot find the status.");
-				  }
-			}
-		});
-	});
+	removeStatus.autoremoveListedStatuses(client);
 }
 //////////////////////////////////////
 // SHOW ALL STATUSES IN CHANNEL
 //////////////////////////////////////
 async function showAllStatuses() {
-	let resultsLength;
-	let db;
-	let  getInformationFromDB = function(callback) {
-		con.query("SELECT * FROM statuses WHERE displayed != 'true'", function (err, dbp, fields) {
-			if (err) throw err;
-				resultsLength = dbp.length;
-				db = dbp;
-				callback(null, db);
-		});
-	}
-	getInformationFromDB(function (err, result) {
-		if (err) logger.info("Database error!");
-		else 
-		//logger.info(resultsLength);
-		for (let i = 0; i < resultsLength; i++) {
-			let s = Status.copyConstructor(db[i]);
-			updateStatuses(s);
-		}
-	  });
+	showAllStatus.showAllStatusesExec(client);
 }
 async function updateStatuses(s){
 	await s.displayAllStatuses(s, client);
-	console.log("s.msgId: "+s.msgId);
-	//ToDo: fetch msgId of posted status 
-	// var sql = `UPDATE statuses SET displayed = "true", msgId = '${s.msgId}' WHERE id = '${s.id}'`;
-	// con.query(sql, function (err, result) {
-	// 	if (err)
-	// 		throw err;
-	// 	logger.info("1 record updated");
-	// });
 }
 //////////////////////////////////////
 // REMOVE FINISHED STATUSES IN CHANNEL
 //////////////////////////////////////
 async function removeStatuses(s) {
-	// foreach channels or what is s?
-	con.query(`SELECT * FROM statusChannelIDs WHERE guildId = ${s.guildId} `, function (err, dbp, fields) {
-		if (err) throw err;
-		dbp.forEach((db) => {
-			statusChannelID = db.statusChannelID;
-			let channel = client.channels.get(statusChannelID);
-			// console.log("db.statusChannelID:");
-			// console.log(db.statusChannelID);
-			// console.log("channel:");
-			// console.log(channel);
-			channel.fetchMessage(s.msgId).then(msg => {
-					//const fetchedMsg = msg.first();
-					msg.delete();
-					logger.info("1 Fetched message deleted");
-					var sql = "DELETE FROM statuses WHERE id = '"+s.id+"'";
-						  con.query(sql, function (err, result) {
-							if (err) throw err;
-							logger.info("Number of records deleted: " + result.affectedRows);
-							console.log(s);
-							client.users.get(s.userId).send("Status removed.");
-					});
-			});
-		});
-	});
-
+	removeStatus.removeStatusesExec(client, s);
 }
 //////////////////////////////////////
 // REMOVE STATUS COMMAND
 //////////////////////////////////////
 async function removestatus(msg) {
 	await removeListedStatuses(msg);
-	// var sql = `DELETE FROM statuses WHERE userId = '${msg.member.user.id}'`;
-	// 	con.query(sql, function (err, result) {
-	// 	if (err)
-	// 		throw err;
-	// 	if (result.affectedRows >= 1) {
-	// 		msg.reply("Status removed");
-	// 		logger.info("Statuses removed: " + result.affectedRows);
-	// 	}
-	// 	else {
-	// 		msg.reply("No status found to be removed");
-	// 	}
-	// });
 }
 async function removeListedStatuses(msg) {
-	con.query(`SELECT * FROM statuses WHERE userId = '${msg.member.user.id}'`, function (err, db, fields) {
-		if (err) throw err;
-		let now = Date.now()
-		db.forEach((dbp) => {
-			let s = Status.copyConstructor(dbp);
-			// if (s instanceof Status && s.isTimed && s.finishTime <= now) {
-			if (s instanceof Status) {
-				//s.hasFinished = false;
-				  if (s) {
-						//   var sql = "DELETE FROM statuses WHERE id = '"+s.id+"'";
-						//   con.query(sql, function (err, result) {
-						// 	if (err) throw err;
-							removeStatuses(s);
-						// 	logger.info("Number of records deleted: " + result.affectedRows);
-						//   });
-			  } else {
-				logger.info("Cannot find the status.");
-				  }
-			}
-		});
-	});
+	removeStatus.removeListedStatusesExec(msg, client);
 }
 //////////////////////////////////////
 // CREATE POLLS
@@ -286,41 +186,6 @@ async function setstatus(msg, args) {
 }
 
 //////////////////////////////////////
-// SET STATUS CHANNEL
-//////////////////////////////////////
-async function setstatuschannel (msg, args) {
-	if (msg.member.hasPermission('ADMINISTRATOR')) {
-		con.query("SELECT * FROM statusChannelIDs", function (err, db, fields) {
-			if (err) throw err;
-			statusChannelID = args[1].replace(/\D/g,'');
-			var dbp;
-			db.forEach((dbps) => {
-				dbp = dbps;
-			});
-				if(dbp.guildId === msg.guild.id) {
-					// var insertValues = `${statusChannelID}', '${msg.guild.id}', '${msg.member.user.id}', '${msg.channel.id}', '${msg.id}', ${msg.member.user.tag}`;
-					var sql = `UPDATE statusChannelIDs SET statusChannelID = ${statusChannelID}, guildId = ${msg.guild.id}, userId = ${msg.member.user.id}, channelId = ${msg.channel.id}, msgId = ${msg.id}, userName = "${msg.member.user.tag}" WHERE guildId = ${msg.guild.id}`;
-						con.query(sql, function (err, result) {
-						if (err) throw err;
-						logger.info("1 record updated");
-						msg.reply(`Status Channel updated to <#${statusChannelID}>`);
-					});
-				} else {
-					var insertValues = `${statusChannelID}', '${msg.guild.id}', '${msg.member.user.id}', '${msg.channel.id}', '${msg.id}', '${msg.member.user.tag}`;
-					var sql = `INSERT INTO statusChannelIDs (statusChannelID, guildId, userId, channelId, msgId, userName) VALUES ('${insertValues}')`;
-						con.query(sql, function (err, result) {
-						if (err) throw err;
-						logger.info("1 record inserted");
-						msg.reply(`Status Channel Set to <#${statusChannelID}>`);
-					});
-				}
-		});
-	} else {
-		msg.reply(`You do not have admin rights.`);
-	}
-}
-
-//////////////////////////////////////
 // LOOKUP STATUS
 //////////////////////////////////////
 async function status(msg, args) {
@@ -428,7 +293,6 @@ async function updateWeekly(msg, args) {
 			w = Weekly.copyConstructor(dbp[0]);
 			w.hasFinished = false;
 			if (w) {
-				logger.info("hey");
 				u.start(msg, w);
 			} else {
 					msg.reply("Cannot find the poll.");
@@ -529,6 +393,7 @@ client.on("ready", () => {
 client.on("message", async (msg) => {
 	if (msg.content.startsWith(config.prefix) && !msg.author.bot) {
 		let isDM = false, dmChannel;
+		// What is this? Old code? Delete later?
 		// if (msg.channel.type === "text" || msg.channel.type === "news") {
 		// 	let role;
 		// 	let roleid = -1;
@@ -588,7 +453,10 @@ client.on("message", async (msg) => {
 					break;	
 					case "setstatuschannel":
 						if (!isDM) {
-							setstatuschannel(msg, args);
+							//////////////////////////////////////
+							// SET STATUS CHANNEL
+							//////////////////////////////////////
+							setStatusChannel.setstatuschannelExec(msg, args);
 						}
 					break;
 					case "removestatus":
