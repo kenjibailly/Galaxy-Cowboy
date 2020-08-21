@@ -7,10 +7,8 @@ A discord bot to create interactive simple polls easily.
 
 ## Use the bot
 
-To use this bot type `!poll help` to see the commands availables. Be aware that **only administrators or users with
-a role named "Poll Creator" can interact with the bot**. The "Poll Creator" role has to be created manually and does not
-need any permisssion.  
-You can also use `!poll examples` to see several examples of how to use the bot.
+To use this bot type `* help` to see the commands availables.
+You can also use `* examples` to see several examples of how to use the bot.
 
 ## Features
 
