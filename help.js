@@ -24,6 +24,8 @@ const helpEmbed = new Discord.RichEmbed()
 	.addBlankField()
 	.addField("<:paypal:734189737077637121>	Donate", `\`${config.prefix}donate\`\nDonate to help keeping the uptime of the bot`)
 	.addBlankField()
+	.addField("📜 TOS", `\`${config.prefix}TOS\`\nTerms of Service, Privacy Policy`)
+	.addBlankField()
 	.addField("About", "The bot has been created by Zep, leader and founder of Galaxy Cowboys. Feel free to report bugs.")
 	.setFooter("Credits to Zheoni for being able to use the source code of Votabot and make this happen", 'attachment://zep.jpg')
     .setColor("#DDA0DD");

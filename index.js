@@ -19,11 +19,12 @@ var w;
 var typeSet;
 const client = new Discord.Client();
 const prefix = String("`"+config.prefix+"`");
-const commandSyntaxRegex = /(help)|(poll\s(time=\d+([smhd]?\s))?("[^"\n]+"\s?){1,11})|(weekly\s(time=\d+([smhd]?\s))?("[^"\n]+"\s?){1,11})|(status?)|(setstatuschannel?)|(removestatus)|(setstatus\s(time=\d+([smhd]?\s))?("[^"\n]+"\s?){1,11})|(update\s\d+)|(examples)|(end\s\d+)|(invite)|(donate)$/;
+const commandSyntaxRegex = /(help)|(poll\s(time=\d+([smhd]?\s))?("[^"\n]+"\s?){1,11})|(weekly\s(time=\d+([smhd]?\s))?("[^"\n]+"\s?){1,11})|(status?)|(TOS)|(setstatuschannel?)|(removestatus)|(setstatus\s(time=\d+([smhd]?\s))?("[^"\n]+"\s?){1,11})|(update\s\d+)|(examples)|(end\s\d+)|(invite)|(donate)$/;
 const prefixSyntaxRegex = new RegExp(`^[${config.prefix}]`);
 const helpEmbed = require('./help.js');
 const examplesEmbed = require('./examples.js');
-let donateEmbed = require('./donate.js');
+const donateEmbed = require('./donate.js');
+const TOSembed = require('./TOS.js');
 let database = new Datastore('database.db');
 database.loadDatabase();
 database.persistence.setAutocompactionInterval(3600000);
@@ -419,7 +420,7 @@ client.on("message", async (msg) => {
 		} else {
 			args[0] = args[0].split(' ').join('');
 		}
-		var words = ["help", "poll", "weekly", "status", "setstatus", "setstatuschannel", "removestatus", "examples", "update", "end", "invite", "donate"];
+		var words = ["help", "poll", "weekly", "status", "setstatus", "setstatuschannel", "removestatus", "examples", "update", "end", "invite", "donate", "TOS"];
 		if(words.includes(args[0])) {
 		if (commandSyntaxRegex.test(command)) {
 			if (args.length > 0) {
@@ -435,6 +436,10 @@ client.on("message", async (msg) => {
 						break;
 					case "donate":
 						msg.reply({ embed: donateEmbed});
+						break;
+					case "TOS":
+						dmChannel = await msg.author.createDM();
+						dmChannel.send({ embed: TOSembed });
 						break;
 					case "weekly":
 						if (!isDM) {
