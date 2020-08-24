@@ -22,7 +22,6 @@ You can also use `*examples` to see several examples of how to use the bot.
 🌟 Create (timed) date RSVP polls with dates (max 7 days).
 
 🌟 Set a (timed) status.
-
 🌟 All statuses can be posted in an overview, channel can be configured.
 
 
