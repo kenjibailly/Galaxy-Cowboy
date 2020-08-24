@@ -61,9 +61,3 @@ Attach a mysql database by editing the botconfig.json file.
 Now, to start the bot use `node index.js`.
 
 Enjoy the bot.
-
-
-I'm also hosting an instance of the bot you can invite it with this link: <https://discord.com/api/oauth2/authorize?client_id=700457249654571139&permissions=1678113856&scope=bot>
-
-
-Support server: <https://discord.gg/nhBtPCG>
