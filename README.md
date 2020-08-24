@@ -14,17 +14,24 @@ You can also use `*examples` to see several examples of how to use the bot.
 ## 🕹️Features
 
 🌟 Create polls up to 10 possible answers.
+
 🌟 Create timed polls up to a week.
+
 🌟 See the results of a poll as a percentage.
-🌟 Create (timed) date RSVP polls with dates (max 7 days)
-🌟 Set a (timed) status
-🌟 All statuses can be posted in an overview, channel can be configured
+
+🌟 Create (timed) date RSVP polls with dates (max 7 days).
+
+🌟 Set a (timed) status.
+
+🌟 All statuses can be posted in an overview, channel can be configured.
 
 
 ## 🔗 Links
 
 [Website link](https://kenjibailly.github.com/galaxy-cowboy-discord-bot/)
+
 [Invite link](https://discord.com/api/oauth2/authorize?client_id=723576740697473084&permissions=1812986945&scope=bot)
+
 [Support server](https://discord.gg/nhBtPCG)
 
 
