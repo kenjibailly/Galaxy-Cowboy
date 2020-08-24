@@ -7,18 +7,28 @@ A discord bot to create interactive simple polls easily.
 
 ## Use the bot
 
-To use this bot type `* help` to see the commands availables.
-You can also use `* examples` to see several examples of how to use the bot.
+To use this bot type `*help` to see the commands availables.
+You can also use `*examples` to see several examples of how to use the bot.
 
-## Features
 
-- Create polls up to 10 possible answers.
-- Create timed polls up to a week.
-- See the results of a poll as a percentage.
-- Only allow certain users to interact with the bot.
-- Create (timed) date RSVP polls with dates (max 7 days)
-- Set a (timed) status
-- All statuses can be posted in an overview, channel can be configured
+## 🕹️Features
+
+🌟 Create polls up to 10 possible answers.
+🌟 Create timed polls up to a week.
+🌟 See the results of a poll as a percentage.
+🌟 Create (timed) date RSVP polls with dates (max 7 days)
+🌟 Set a (timed) status
+🌟 All statuses can be posted in an overview, channel can be configured
+
+
+## 🔗 Links
+
+[Website link](https://kenjibailly.github.com/galaxy-cowboy-discord-bot/)
+[Invite link](https://discord.com/api/oauth2/authorize?client_id=723576740697473084&permissions=1812986945&scope=bot)
+[Support server](https://discord.gg/nhBtPCG)
+
+
+🙏 Enjoy the bot and don't hesitate to ask any questions or send out ideas!
 
 ## Host the bot
 
