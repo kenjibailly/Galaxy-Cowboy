@@ -1,6 +1,6 @@
 const Discord = require("discord.js");
 const config = require("./botconfig.json");
-let TOSembed = new Discord.RichEmbed()
+let TOSembed = new Discord.MessageEmbed()
 		.attachFiles(['assets/zep.jpg'])
 		.setTitle(`📜 ┊ Galaxy Cowboy Privacy Policy`)
 		.setDescription(`By using Galaxy Cowboy and/or inviting the bot to your server, you thereby agree to this privacy policy.`)

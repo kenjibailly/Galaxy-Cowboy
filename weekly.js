@@ -3,6 +3,7 @@ const hash = require("string-hash");
 //const config = process.env;
 const config = require("./botconfig.json");
 const logger = require('./logger.js');
+const guildConf = require('./storages/guildConf.json');
 const numEmojis = ["1⃣", "2⃣", "3⃣", "4⃣", "5⃣", "6⃣", "7⃣", "8⃣", "9⃣", "🔟"];
 var reactEmoji = ["734158773739847800", "734158773740109876", "734158773777727600", "734158773794504765", "734158773874196614", "734158773731459134", "734158773811413112"];
 var dayEmoji = ["<:Sunday:734158773739847800>", "<:Monday:734158773740109876>", "<:Tuesday:734158773777727600>", "<:Wednesday:734158773794504765>", "<:Thursday:734158773874196614>", "<:Friday:734158773731459134>", "<:Saturday:734158773811413112>"];
@@ -15,12 +16,14 @@ let dateCollection = [];
 let dateEmojiCollection = [];
 let dateEmojiReactCollection = [];
 var reactCountEmojiCollection = [];
+var reactEmojiCollection = [];
 let dateTextLines = [];
 let position;
 var current_datetime;
 var dateFormatOne;
 var positionStart;
 var dateDayRange;
+var prefix;
 class Weekly {
 	constructor(msg, question, startDate, endDate, weeklyDescription, weeklyType, answers, time, type) {
 		if (msg) { 
@@ -67,6 +70,7 @@ class Weekly {
 		return w;
 	}
 	async start(msg) {
+		prefix = guildConf[msg.guild.id].prefix;
 		position = 0;
 		dateDayCollection = [];
 		dateCollection = [];
@@ -135,7 +139,7 @@ class Weekly {
 		const now = new Date();
 		const message = await this.getWeeklyMessage(client);
 		if (!message) {
-			console.error("Cant find poll message");
+			console.error("Cant find weekly poll message");
 			return;
 		}
 		if (message.embeds.length < 1) {
@@ -143,7 +147,7 @@ class Weekly {
 			return;
 		}
 		this.hasFinished = true;
-		const embed = new Discord.RichEmbed(message.embeds[0]);
+		const embed = new Discord.MessageEmbed(message.embeds[0]);
 		embed.setColor("FF0800")
 			.setAuthor(`${this.question} [FINISHED]`)
 			.setFooter(`Weekly ${this.id} finished ${now.toUTCString()}`);
@@ -158,9 +162,13 @@ class Weekly {
 	async getWeeklyVotes(message) {
 		if (this.hasFinished) {
 			const reactionCollectionWeekly = message.reactions;
-			reactCountEmojiCollection = this.getReactCountEmojiCollection();
-			for (let i = 0; i < reactCountEmojiCollection.length; i++) {
-				this.results[i] = reactionCollectionWeekly.get(reactCountEmojiCollection[i]).count - 1;
+			reactEmojiCollection = this.getReactCountEmojiCollection();
+			reactEmojiCollection = reactEmojiCollection[0];
+			for (let i = 0; i < reactEmojiCollection.length; i++) {
+				// console.log(reactionCollectionWeekly.get(reactEmojiCollection[i]));
+				// console.log(message.reactions.cache.get(reactEmojiCollection[i]));
+				// console.log(reactEmojiCollection);
+				this.results[i] = reactionCollectionWeekly.cache.get(reactEmojiCollection[i]).count - 1;
 			}
 		} else {
 			throw new Error("Poll not ended");
@@ -199,10 +207,10 @@ class Weekly {
 		}
 		var dateTextLines = this.pushText(dateDayRange);
 		let dateTextLine = dateTextLines.join('');
-		let embed = new Discord.RichEmbed()
+		let embed = new Discord.MessageEmbed()
 			.setAuthor("Weekly Scheduler", "https://cdn1.vectorstock.com/i/1000x1000/57/80/ufo-neon-sign-design-template-aliens-neon-vector-26235780.jpg", "https://img.freepik.com/free-vector/alien-outer-space-neon-sign_104045-467.jpg?size=338&ext=jpg")
 			.setTitle(`❓ ${this.question} ❓`)
-			.addField(`This bot is made by Galaxy Cowboys!`, `Make your own poll, try out \`${config.prefix}help\` and \`${config.prefix}examples\``)
+			.addField(`Make your own poll!`, `Check out \`${prefix}help\` and \`${prefix}examples\``)
 			.setDescription(`${this.weeklyDescription}` + "\n\n"+ dateTextLine)
 			.setColor("#d596ff")
 			.setFooter(footer);
@@ -330,7 +338,7 @@ class Weekly {
 		for (let i = 0; i < this.results.length; i++) {
 			let percentage = (this.results[i] / totalVotes * 100);
 			let result = {
-				emoji: this.emojis[i],
+				emoji: reactCountEmojiCollection[i],
 				answer: this.answers[i],
 				votes: this.results[i],
 				percentage: percentage.toFixed(2)
@@ -344,7 +352,7 @@ class Weekly {
 			description += `<:${r.emoji}> - ** ${r.votes} ** - ${r.percentage}% \n`;
 		});
 		let footer = `Results from poll ${this.id} finished on ${new Date().toUTCString()}`;
-		let weeklyResultsEmbed = new Discord.RichEmbed()
+		let weeklyResultsEmbed = new Discord.MessageEmbed()
 			.setAuthor("Results of: " + this.question)
 			.setDescription(description)
 			.setFooter(footer)
@@ -369,10 +377,12 @@ class Weekly {
 	}
 	async getEmojis(type) {
 		reactCountEmojiCollection = this.getReactCountEmojiCollection();
+		reactCountEmojiCollection = reactCountEmojiCollection[0];
 		var stringCountEmojiCollection = reactCountEmojiCollection.toString();
 		return stringCountEmojiCollection;
 	}
 	getReactCountEmojiCollection() {
+		reactEmojiCollection = [];
 		reactCountEmojiCollection = [];
 		let date1 = new Date();
 		if (this.startDate == 0 || this.startDate.length === 0 || this.startDate == null) {
@@ -413,15 +423,16 @@ class Weekly {
 					days.length = days.length -1;
 				}
 				if (positionStart < days.length) {
+					reactEmojiCollection.push(reactEmoji[position]);
 					reactCountEmojiCollection.push(reactCountEmoji[position]);
 				} else {
 				}
 		}
-		return reactCountEmojiCollection;
+		return [reactEmojiCollection, reactCountEmojiCollection];
 	}
 	async getWeeklyMessage(client) {
 		try {
-			return await client.guilds.get(this.guildId).channels.get(this.channelId).fetchMessage(this.msgId);
+			return await client.guilds.cache.get(this.guildId).channels.cache.get(this.channelId).messages.fetch(this.msgId);
 		} catch (err) {
 			return;
 		}

@@ -1,0 +1,25 @@
+:broom: Huge code clean up
+
+*invite command expanded
+*TOS command added
+Above commands added to help
+*setup command created
+*setstatuschannel removed, inside *setup instead
+
+Bot added to a series of websites to distribute and help other people out.
+Galaxy Cowboy Website added: https://kenjibailly.github.io/galaxy-cowboy-discord-bot/
+Jailbreak Repo colors + slider picture changed: https://kenjibailly.github.io/repo/
+
+Automatisation: !bump command added to server for bumping promotion bot message
+
+Short urls created for memory:
+http://kb-repo.ga
+http://kb-invite-bot.ga
+http://kb-galaxy-cowboy.ga
+Urls added to Discord server under new category Website Links
+
+Github landing page update: https://github.com/kenjibailly/galaxy-cowboy
+
+Discord.js updated to 12.3.1
+
+

@@ -1,39 +1,347 @@
+// Libraries
 const Discord = require("discord.js");
 const winston = require('winston');
+const logger = require('./logger.js');
+const mysql = require('mysql');
+const fs = require("fs");
+// Config
 const config = require("./botconfig.json");
+// var config = require('./storages/config.json'); // Config File
+var guildConf = require('./storages/guildConf.json');
+// Classes
 const Poll = require("./poll.js");
 const Weekly = require("./weekly.js");
 const Update = require("./update.js");
 const Status = require("./status.js");
-const Datastore = require('nedb');
-const finishTimedPolls = require('./functions/finishTimedPolls.js');
-const richPresence = require('./functions/richPresence.js');
-const removeStatus = require('./functions/removeStatuses.js');
-const showAllStatus = require('./functions/showAllStatuses.js');
-const setStatusChannel = require('./functions/setStatusChannel.js');
-const logger = require('./logger.js');
-var mysql = require('mysql');
-var con = mysql.createPool(config.CLEARDB_DATABASE_URL);
-var inputid;
-var w;
-var typeSet;
-const client = new Discord.Client();
-const prefix = String("`"+config.prefix+"`");
-const commandSyntaxRegex = /(help)|(poll\s(time=\d+([smhd]?\s))?("[^"\n]+"\s?){1,11})|(weekly\s(time=\d+([smhd]?\s))?("[^"\n]+"\s?){1,11})|(status?)|(TOS)|(setstatuschannel?)|(removestatus)|(setstatus\s(time=\d+([smhd]?\s))?("[^"\n]+"\s?){1,11})|(update\s\d+)|(examples)|(end\s\d+)|(invite)|(donate)$/;
-const prefixSyntaxRegex = new RegExp(`^[${config.prefix}]`);
+// Commands
 const helpEmbed = require('./help.js');
 const examplesEmbed = require('./examples.js');
 const donateEmbed = require('./donate.js');
 const TOSembed = require('./TOS.js');
 const inviteEmbed = require('./invite.js');
-let database = new Datastore('database.db');
-database.loadDatabase();
-database.persistence.setAutocompactionInterval(3600000);
+const setup = require('./setup/setup.js');
+// Functions
+const finishTimedPolls = require('./functions/finishTimedPolls.js');
+const richPresence = require('./functions/richPresence.js');
+const removeStatus = require('./functions/removeStatuses.js');
+const showAllStatus = require('./functions/showAllStatuses.js');
+const setStatusChannel = require('./functions/setStatusChannel.js');
+const checkClientGuilds = require('./functions/checkClientGuilds.js')
+
+var con = mysql.createPool(config.CLEARDB_DATABASE_URL);
+var supportServerGuildId = "734229467836186674";
+var inputid;
+var w;
+var typeSet;
+const client = new Discord.Client();
+
 client.on('ready', () => logger.log('info', 'The bot is online!'));
 client.on('debug', m => logger.log('debug', m));
 client.on('warn', m => logger.log('warn', m));
 client.on('error', m => logger.log('error', m));
 process.on('uncaughtException', error => logger.error(error.stack));
+
+//////////////////////////////////////
+// BOT ON READY
+//////////////////////////////////////
+client.on("ready", () => {
+	logger.info(`Bot logged in as ${client.user.tag}!`);
+	richPresence.activity(client);
+	setInterval(finishTimedPollsExecute, 10000);
+	setInterval(autoremoveListedStatuses, 10000);
+	setInterval(showAllStatuses, 10000);
+	if (client.guilds.id === supportServerGuildId) {
+		setInterval(changeChannelGuildSize, 10000); // 15 mins timer 900000
+	}
+	setInterval(() => logger.info("The bot is in " + client.guilds.size + " guild(s)"), 1800000); // logging info
+
+});
+
+//////////////////////////////////////
+// BOT ON SERVER JOINED
+//////////////////////////////////////
+client.on('guildCreate', (guild) => { // If the Bot was added on a server, proceed
+    if (!guildConf[guild.id]) { // If the guild's id is not on the GUILDCONF File, proceed
+	guildConf[guild.id] = {
+		prefix: config.prefix
+	}
+    }
+     fs.writeFile('./storages/guildConf.json', JSON.stringify(guildConf, null, 2), (err) => {
+     	if (err) logger.error(err)
+	})
+
+    const guildCreateOwnerEmbed = new Discord.MessageEmbed()
+    .setTitle("👋 ┊ Thanks for inviting Galaxy Cowboy 👾 to your server!")
+    .attachFiles(['./assets/osalien.jpg'])
+    .addField("‎\n<:command:748285373364306031> Configure Server Prefix", `\`\`\`${config.prefix}setup\`\`\``)
+    .addField("‎\n<:status:747796552407449711> Configure Status Channel", `\`\`\`${config.prefix}setup\`\`\``)
+    .addField("‎\n<:gcstar:730505901529759784> Useful commands", `\`\`\`${config.prefix}help\`\`\`\`\`\`${config.prefix}examples\`\`\`‎\n`)
+    .setFooter("‎\nThanks for using Galaxy Cowboy, enjoy!", 'attachment://osalien.jpg')
+	.setColor("#DDA0DD");
+	guild.owner.send({ embed: guildCreateOwnerEmbed });
+});
+
+//////////////////////////////////////
+// BOT ON SERVER LEFT
+//////////////////////////////////////
+client.on('guildDelete', (guild) => { // If the Bot was removed on a server, proceed
+	delete guildConf[guild.id]; // Deletes the Guild ID and Prefix
+	fs.writeFile('./storages/guildConf.json', JSON.stringify(guildConf, null, 2), (err) => {
+		if (err) logger.error(err)
+   })
+});
+
+
+
+client.on("message", async (msg) => {
+	if (msg.author.bot || msg.author === client.user) return; // Checks if or the Author is a Bot, or the Author is our Bot, stop.
+	var args;
+	var command;
+	// Prefix per server
+	var argsPrefix = msg.content.split(' ').slice(1); // We need this later
+	if(msg.channel.type === "dm") {
+		var prefix = config.prefix;
+		command = msg.content.split(' ')[0].replace(config.prefix, ''); // Replaces the Current Prefix with this
+	} else {
+		command = msg.content.split(' ')[0].replace(guildConf[msg.guild.id].prefix, ''); // Replaces the Current Prefix with this
+		var prefix = guildConf[msg.guild.id].prefix;
+		args = parseToArgs(msg);
+
+		if (args[0].includes('@')) {
+			args[0] = args[0].split(' ').join('');
+		} else {
+			args[0] = args[0].split(' ').join('');
+		}	
+		
+		if (args.length > 0) {
+			args[0] = String(args[0]);
+		}
+	}
+	// var command = msg.content.slice(prefix.length);
+
+	// var words = ["help", "setup", "poll", "weekly", "status", "setstatus", "removestatus", "examples", "update", "end", "invite", "donate", "TOS"];
+	// if(words.includes(args[0])) {
+		// if (commandSyntaxRegex.test(command)) {
+
+
+		let isDM = false, dmChannel;
+		switch (command) {
+			case "ping":
+				msg.channel.send('Pong!') // Reply pong!			
+				return;
+			case "prefix":
+				msg.reply(`Prefix is set to ${prefix}, to change use ${prefix}setup`);
+			break;
+			case "configprefix":
+				if(args[1] === undefined) {
+					argsPrefix[0] = config.prefix;
+				}
+				guildConf[msg.guild.id].prefix = argsPrefix[0];
+				if (!guildConf[msg.guild.id].prefix) {
+					guildConf[msg.guild.id].prefix = config.prefix; // If you didn't specify a Prefix, set the Prefix to the Default Prefix
+				}
+				fs.writeFile('./storages/guildConf.json', JSON.stringify(guildConf, null, 2), (err) => {
+					if (err) logger.error(err)
+				})
+				msg.reply(`Prefix set to ${argsPrefix[0]}`);
+				return;
+				case "help":
+					dmChannel = await msg.author.createDM();
+					await dmChannel.send({ embed: helpEmbed });
+					break;
+				case "setup":
+					useSetup(msg);
+					break;
+				case "examples":
+					dmChannel = await msg.author.createDM();
+					dmChannel.send({ embed: examplesEmbed });
+					break;
+				case "donate":
+					msg.reply({ embed: donateEmbed});
+					break;
+				case "TOS":
+					dmChannel = await msg.author.createDM();
+					dmChannel.send({ embed: TOSembed });
+					break;
+				case "weekly":
+					if (!isDM) {
+						weekly(msg, args);
+					}
+				break;
+				case "status":
+					if (!isDM) {
+						status(msg, args);
+					}
+				break;
+				case "setstatus":
+					if (!isDM) {
+						setstatus(msg, args);
+					}
+				break;	
+				case "removestatus":
+					if (!isDM) {
+						removestatus(msg, args);
+					}
+				break;							
+				case "update":
+					if (!isDM) {
+						updateWeekly(msg, args);
+					}
+					break;
+				case "end":
+					if (!isDM) {
+						end(msg, args);
+					}
+					break;
+				case "invite":
+					if (config.link) {
+						dmChannel = await msg.author.createDM();
+						dmChannel.send({ embed: inviteEmbed });
+					} else {
+						msg.reply("The link is not available in this moment.");
+					}
+					break;
+				case "poll":
+					if (!isDM) {
+						poll(msg, args);
+					}
+					break;
+			default:
+				// msg.reply(`Wrong command syntax. Learn how to do it correctly with \`${prefix}help\``);
+				return;
+		}
+	// }
+// }
+// }
+});
+
+	// if (command === "ping") { // If your command is <prefix>ping, proceed
+	// 	msg.channel.send('pong!') // Reply pong!
+	// } else
+	// if (command === "prefix") {
+	// 	guildConf[msg.guild.id].prefix = args[0];
+	// 	msg.reply(`Prefix set to ${args[0]}`);
+	// 	if (!guildConf[msg.guild.id].prefix) {
+	// 		guildConf[msg.guild.id].prefix = config.prefix; // If you didn't specify a Prefix, set the Prefix to the Default Prefix
+	// 	}
+	// 	fs.writeFile('./storages/guildConf.json', JSON.stringify(guildConf, null, 2), (err) => {
+	// 		if (err) console.log(err)
+	// 	})
+	// }
+
+	// Prefix
+	// var prefix = guildConf[msg.guild.id].prefix;
+
+	// prefix = String("`"+prefix+"`");
+	// const commandSyntaxRegex = /(help)|(setup)|(poll\s(time=\d+([smhd]?\s))?("[^"\n]+"\s?){1,11})|(weekly\s(time=\d+([smhd]?\s))?("[^"\n]+"\s?){1,11})|(status?)|(TOS)|(removestatus)|(setstatus\s(time=\d+([smhd]?\s))?("[^"\n]+"\s?){1,11})|(update\s\d+)|(examples)|(end\s\d+)|(invite)|(donate)$/;
+	// const prefixSyntaxRegex = new RegExp(`^[${prefix}]`);
+	
+
+	// if (msg.content.startsWith(prefix)) {
+	// 	let isDM = false, dmChannel;
+	// if(msg.content.startsWith(prefix) && msg.content !== prefix){
+	// 	const command = msg.content.slice(prefix.length);
+	// 	let args = parseToArgs(msg);
+	// 	if (args[0].includes('@')) {
+	// 		args[0] = args[0].split(' ').join('');
+	// 	} else {
+	// 		args[0] = args[0].split(' ').join('');
+	// 	}
+	// 	var words = ["help", "setup", "poll", "weekly", "status", "setstatus", "removestatus", "examples", "update", "end", "invite", "donate", "TOS"];
+	// 	if(words.includes(args[0])) {
+	// 	if (commandSyntaxRegex.test(command)) {
+	// 		if (args.length > 0) {
+	// 			args[0] = String(args[0]);
+	// 			switch (args[0]) {
+	// 				case "help":
+	// 					dmChannel = await msg.author.createDM();
+	// 					await dmChannel.send({ embed: helpEmbed });
+	// 					break;
+	// 				case "setup":
+	// 					useSetup(msg);
+	// 					break;
+	// 				case "examples":
+	// 					dmChannel = await msg.author.createDM();
+	// 					dmChannel.send({ embed: examplesEmbed });
+	// 					break;
+	// 				case "donate":
+	// 					msg.reply({ embed: donateEmbed});
+	// 					break;
+	// 				case "TOS":
+	// 					dmChannel = await msg.author.createDM();
+	// 					dmChannel.send({ embed: TOSembed });
+	// 					break;
+	// 				case "weekly":
+	// 					if (!isDM) {
+	// 						weekly(msg, args);
+	// 					}
+	// 				break;
+	// 				case "status":
+	// 					if (!isDM) {
+	// 						status(msg, args);
+	// 					}
+	// 				break;
+	// 				case "setstatus":
+	// 					if (!isDM) {
+	// 						setstatus(msg, args);
+	// 					}
+	// 				break;	
+	// 				case "removestatus":
+	// 					if (!isDM) {
+	// 						removestatus(msg, args);
+	// 					}
+	// 				break;							
+	// 				case "update":
+	// 					if (!isDM) {
+	// 						updateWeekly(msg, args);
+	// 					}
+	// 					break;
+	// 				case "end":
+	// 					if (!isDM) {
+	// 						end(msg, args);
+	// 					}
+	// 					break;
+	// 				case "invite":
+	// 					if (config.link) {
+	// 						dmChannel = await msg.author.createDM();
+	// 						dmChannel.send({ embed: inviteEmbed });
+	// 					} else {
+	// 						msg.reply("The link is not available in this moment.");
+	// 					}
+	// 					break;
+	// 				case "poll":
+	// 					if (!isDM) {
+	// 						poll(msg, args);
+	// 					}
+	// 					break;
+	// 				default:
+	// 					msg.reply(`What did you try? Learn how to do it correctly with \`${prefix}help\``);
+	// 					if (!isDM) {
+	// 						poll(msg, args);
+	// 					}
+	// 					break;
+	// 			}
+	// 		} else {
+	// 			msg.reply(`Something went wrong. Learn how to do it correctly with \`${prefix}help\``);
+	// 		}
+	// 	} else {
+	// 		msg.reply(`Wrong command syntax. Learn how to do it correctly with \`${prefix}help\``);
+	// 	}
+// 	}
+// 	}
+// });
+
+//////////////////////////////////////
+// SETUP
+//////////////////////////////////////
+
+async function useSetup(msg) {
+	if (msg.channel.type === 'dm') {
+		setup.preSetup(client, msg);
+	} else {
+		setup.setupExec(client, msg);
+	}
+}
 
 async function autoremoveListedStatuses() {
 	removeStatus.autoremoveListedStatuses(client);
@@ -44,8 +352,8 @@ async function autoremoveListedStatuses() {
 async function showAllStatuses() {
 	showAllStatus.showAllStatusesExec(client);
 }
-async function updateStatuses(s){
-	await s.displayAllStatuses(s, client);
+async function changeChannelGuildSize(){
+	checkClientGuilds.checkGuildSize(client);
 }
 //////////////////////////////////////
 // REMOVE FINISHED STATUSES IN CHANNEL
@@ -98,8 +406,9 @@ async function poll(msg, args) {
 	await p.start(msg);
 	if (p.hasFinished == false) {
 		p.emojis = p.emojis.toString();
-		var insertValues = p.id+"','"+p.userId+"', '"+p.guildId+"', '"+p.channelId+"', '"+p.msgId+"', '"+p.question+"', '', '', '', '', '"+p.createdOn+"', '"+p.isTimed+"', '"+p.hasFinished+"', '"+p.finishTime+"', '"+p.type+"', '"+p.emojis+"', '"+p.results;
-		var sql = "INSERT INTO polls (id, userId, guildId, channelId, msgId, question, startDate, endDate, weeklyDescription, answers, createdOn, isTimed, hasFinished, finishTime, type, emojis, results) VALUES ('"+insertValues+"')";
+		p.reactionEmojis = p.reactionEmojis.toString();
+		var insertValues = p.id+"','"+p.userId+"', '"+p.guildId+"', '"+p.channelId+"', '"+p.msgId+"', '"+p.question+"', '', '', '', '', '"+p.createdOn+"', '"+p.isTimed+"', '"+p.hasFinished+"', '"+p.finishTime+"', '"+p.type+"', '"+p.emojis+"', '"+p.reactionEmojis+"', '"+p.results;
+		var sql = "INSERT INTO polls (id, userId, guildId, channelId, msgId, question, startDate, endDate, weeklyDescription, answers, createdOn, isTimed, hasFinished, finishTime, type, emojis, reactionEmojis, results) VALUES ('"+insertValues+"')";
 		con.query(sql, function (err, result) {
 		  if (err) throw err;
 		  logger.info("1 record inserted");
@@ -144,8 +453,8 @@ async function weekly(msg, args) {
 	await w.start(msg);
 	if (w.hasFinished == false) {
 			w.emojis = (await w.emojis).toString();
-			var insertValues = `${w.id}','${w.userId}', '${w.guildId}', '${w.channelId}', '${w.msgId}', '${w.question}', '${w.startDate}', '${w.endDate}', '${w.weeklyDescription}', '${w.answers}', '${w.createdOn}', '${w.isTimed}', '${w.hasFinished}', '${w.finishTime}', '${w.type}', '${w.emojis}', '${w.results}`;
-			var sql = "INSERT INTO polls (id, userId, guildId, channelId, msgId, question, startDate, endDate, weeklyDescription, answers, createdOn, isTimed, hasFinished, finishTime, type, emojis, results) VALUES ('"+insertValues+"')";
+			var insertValues = `${w.id}','${w.userId}', '${w.guildId}', '${w.channelId}', '${w.msgId}', '${w.question}', '${w.startDate}', '${w.endDate}', '${w.weeklyDescription}', '${w.answers}', '${w.createdOn}', '${w.isTimed}', '${w.hasFinished}', '${w.finishTime}', '${w.type}', '${w.emojis}', ' ', '${w.results}`;
+			var sql = "INSERT INTO polls (id, userId, guildId, channelId, msgId, question, startDate, endDate, weeklyDescription, answers, createdOn, isTimed, hasFinished, finishTime, type, emojis, reactionEmojis, results) VALUES ('"+insertValues+"')";
 			con.query(sql, function (err, result) {
 			  if (err) throw err;
 			  logger.info("1 record inserted");
@@ -340,7 +649,12 @@ function parseTime(msg, args) {
 // ARGS ARE DEFINED PER COMMAND
 //////////////////////////////////////
 function parseToArgs(msg) {
-	let args = msg.content.slice(config.prefix.length)
+	if(msg.channel.type === "dm") {
+		var prefix = config.prefix;
+	} else {
+		var prefix = guildConf[msg.guild.id].prefix;
+	}
+	let args = msg.content.slice(prefix.length)
 		.trim()
 		.split("\"")
 		.filter((phrase) => phrase.trim() !== "");
@@ -380,135 +694,6 @@ function parseToArgs(msg) {
 async function finishTimedPollsExecute () {
 	finishTimedPolls.finishTimedPollsExec(client);
 }
-//////////////////////////////////////
-// BOT STATUS IN CHAT PANEL + REGEX VALIDATION COMMANDS SWITCH
-//////////////////////////////////////
-client.on("ready", () => {
-	logger.info(`Bot logged in as ${client.user.tag}!`);
-	richPresence.activity(client);
-	setInterval(finishTimedPollsExecute, 10000);
-	setInterval(autoremoveListedStatuses, 10000);
-	setInterval(showAllStatuses, 10000);
-	setInterval(() => logger.info("The bot is in " + client.guilds.size + " guild(s)"), 1800000); // logging info
-});
 
-client.on("message", async (msg) => {
-	if (msg.content.startsWith(config.prefix) && !msg.author.bot) {
-		let isDM = false, dmChannel;
-		// What is this? Old code? Delete later?
-		// if (msg.channel.type === "text" || msg.channel.type === "news") {
-		// 	let role;
-		// 	let roleid = -1;
-		// 	try {
-		// 		role = msg.guild.roles.find((r) => r.name === "Raid Sheriff 👹");
-		// 		if (role) roleid = role.id;
-		// 	} catch (error) {
-		// 		console.error(error);
-		// 	}
-		// 	if (!(msg.member.hasPermission("SEND_MESSAGES") || msg.member.roles.has(roleid))) {
-		// 		msg.reply("You don't have permision to do that. Only administrators or users with a role named \"Poll Creator\"");
-		// 		logger.info(`${msg.author.tag} on ${msg.guild.name} tried to create a poll without permission"`);
-		// 		return;
-		// 	}
-		// } else {
-		// 	isDM = true;
-		// }
-	if(msg.content.startsWith(config.prefix) && msg.content !== config.prefix){
-		const command = msg.content.slice(config.prefix.length);
-		let args = parseToArgs(msg);
-		if (args[0].includes('@')) {
-			args[0] = args[0].split(' ').join('');
-		} else {
-			args[0] = args[0].split(' ').join('');
-		}
-		var words = ["help", "poll", "weekly", "status", "setstatus", "setstatuschannel", "removestatus", "examples", "update", "end", "invite", "donate", "TOS"];
-		if(words.includes(args[0])) {
-		if (commandSyntaxRegex.test(command)) {
-			if (args.length > 0) {
-				args[0] = String(args[0]);
-				switch (args[0]) {
-					case "help":
-						dmChannel = await msg.author.createDM();
-						await dmChannel.send({ embed: helpEmbed });
-						break;
-					case "examples":
-						dmChannel = await msg.author.createDM();
-						dmChannel.send({ embed: examplesEmbed });
-						break;
-					case "donate":
-						msg.reply({ embed: donateEmbed});
-						break;
-					case "TOS":
-						dmChannel = await msg.author.createDM();
-						dmChannel.send({ embed: TOSembed });
-						break;
-					case "weekly":
-						if (!isDM) {
-							weekly(msg, args);
-						}
-					break;
-					case "status":
-						if (!isDM) {
-							status(msg, args);
-						}
-					break;
-					case "setstatus":
-						if (!isDM) {
-							setstatus(msg, args);
-						}
-					break;	
-					case "setstatuschannel":
-						if (!isDM) {
-							//////////////////////////////////////
-							// SET STATUS CHANNEL
-							//////////////////////////////////////
-							setStatusChannel.setstatuschannelExec(msg, args);
-						}
-					break;
-					case "removestatus":
-						if (!isDM) {
-							removestatus(msg, args);
-						}
-					break;							
-					case "update":
-						if (!isDM) {
-							updateWeekly(msg, args);
-						}
-						break;
-					case "end":
-						if (!isDM) {
-							end(msg, args);
-						}
-						break;
-					case "invite":
-						if (config.link) {
-							dmChannel = await msg.author.createDM();
-							dmChannel.send({ embed: inviteEmbed });
-						} else {
-							msg.reply("The link is not available in this moment.");
-						}
-						break;
-					case "poll":
-						if (!isDM) {
-							poll(msg, args);
-						}
-						break;
-					default:
-						msg.reply(`What did you try? Learn how to do it correctly with \`${config.prefix}help\``);
-						if (!isDM) {
-							poll(msg, args);
-						}
-						break;
-				}
-			} else {
-				msg.reply(`Something went wrong. Learn how to do it correctly with \`${config.prefix}help\``);
-			}
-		} else {
-			msg.reply(`Wrong command syntax. Learn how to do it correctly with \`${config.prefix}help\``);
-		}
-	}
-	} 
-	}
-});
 client.on("error", console.error);
 client.login(config.TOKEN).then((token) => logger.info("Logged in successfully")).catch(console.error);

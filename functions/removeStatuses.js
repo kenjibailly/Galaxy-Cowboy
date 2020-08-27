@@ -12,15 +12,15 @@ module.exports.removeStatusesExec = function (client, s) {
 		if (err) throw err;
 		dbp.forEach((db) => {
 			statusChannelID = db.statusChannelID;
-			let channel = client.channels.get(statusChannelID);
-			channel.fetchMessage(s.msgId).then(msg => {
+			let channel = client.channels.cache.get(statusChannelID);
+			channel.messages.fetch(s.msgId).then(msg => {
 					msg.delete();
 					logger.info("1 Fetched message deleted");
 					var sql = "DELETE FROM statuses WHERE id = '"+s.id+"'";
 						  con.query(sql, function (err, result) {
 							if (err) throw err;
 							logger.info("Number of records deleted: " + result.affectedRows);
-							client.users.get(s.userId).send("Status removed.");
+							client.users.cache.get(s.userId).send("Status removed.");
 					});
 			});
 		});

@@ -16,7 +16,7 @@
   "license": "ISC",
   "dependencies": {
     "dateformat": "^3.0.3",
-    "discord.js": "^11.4.2",
+    "discord.js": "file:node_modules/discord.js-12.3.1",
     "mysql": "^2.18.1",
     "nedb": "^1.8.0",
     "string-hash": "^1.1.3",

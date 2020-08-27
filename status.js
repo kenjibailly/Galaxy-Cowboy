@@ -58,7 +58,7 @@ class Status {
     generateEmbedSet(msg) {
         let footer = `Thank you for your notice`;
         if (this.isTimed) footer += ` | This status ends on ${new Date(this.finishTime).toUTCString()}`;
-		let embed = new Discord.RichEmbed()
+		let embed = new Discord.MessageEmbed()
 			//.setAuthor("Status Enabler", "https://cdn1.vectorstock.com/i/1000x1000/57/80/ufo-neon-sign-design-template-aliens-neon-vector-26235780.jpg", "https://img.freepik.com/free-vector/alien-outer-space-neon-sign_104045-467.jpg?size=338&ext=jpg")
 			.setTitle(`<:status:734954957777928324> ┊ Status Enabler`)
 			.setDescription(`You have successfully added status:\n<:onday:734894950826639410> ${this.status}`)
@@ -86,7 +86,7 @@ class Status {
 		});
         let footer = `Thank you for your notice`;
         if (this.isTimed == "true") footer += ` | This status ends on ${new Date(this.finishTime)}`;
-		let embed = new Discord.RichEmbed()
+		let embed = new Discord.MessageEmbed()
 			.setTitle(`<:status:734954957777928324> ┊ Status Enabler`)
 			.setDescription(`Your status is set to:\n<:onday:734894950826639410> ${this.status}`)
 			.setColor("#d596ff")
@@ -101,7 +101,7 @@ class Status {
 		con.query(`SELECT * FROM statusChannelIDs WHERE guildId = '${this.guildId}'`, function (err, db, fields) {
 			if (err) throw err;
 			db.forEach((dbp) => {
-				let sent = client.channels.get(dbp.statusChannelID).send({ embed: generateEmbedAllStatuses() }).then(sent => {
+				let sent = client.channels.cache.get(dbp.statusChannelID).send({ embed: generateEmbedAllStatuses() }).then(sent => {
 				this.msgId = sent.id;
 				var sql = `UPDATE statuses SET displayed = "true", msgId = '${this.msgId}' WHERE id = '${s.id}'`;
 				con.query(sql, function (err, result) {
@@ -116,7 +116,7 @@ class Status {
 				let footer = `Thank you for your notice`;
 				let finishTimeStatus = convertDayDate(new Date(Number(finishTime))).toString();
 				if (isTimed == "true") footer += ` | This status ends on ${finishTimeStatus}`;
-				let embed = new Discord.RichEmbed()
+				let embed = new Discord.MessageEmbed()
 					.setTitle(`<:status:734954957777928324> ┊ Status Enabler`)
 					.setDescription(`<@!${userId}>'s status is set to:\n<:onday:734894950826639410> ${status}`)
 					.setColor("#d596ff")
@@ -153,7 +153,7 @@ class Status {
 		let footer = `Thank you for your notice`;
 		let finishTimeStatus = this.convertDayDate(new Date(Number(this.finishTime))).toString();
         if (this.isTimed == "true") footer += ` | This status ends on ${finishTimeStatus}`;
-		let embed = new Discord.RichEmbed()
+		let embed = new Discord.MessageEmbed()
 			.setTitle(`<:status:734954957777928324> ┊ Status Enabler`)
 			.setDescription(`<@!${this.userId}>'s status is set to:\n<:onday:734894950826639410> ${this.status}`)
 			.setColor("#d596ff")

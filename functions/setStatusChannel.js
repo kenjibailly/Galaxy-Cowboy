@@ -1,39 +1,62 @@
 //////////////////////////////////////
-// SHOW ALL STATUSES
+// SET STATUS CHANNEL
 //////////////////////////////////////
 const config = require("../botconfig.json");
 var mysql = require('mysql');
 var con = mysql.createPool(config.CLEARDB_DATABASE_URL);
 const logger = require('../logger.js');
 const Status = require("../status.js");
-module.exports.setstatuschannelExec = function (msg, args) {
-	if (msg.member.hasPermission('ADMINISTRATOR')) {
-		con.query("SELECT * FROM statusChannelIDs", function (err, db, fields) {
+module.exports.setStatusChannelExec = async function (client, msg, guildId, listedChannelId) {
+	// ToDo: check if user has admin permissions of specific guild 
+	var member;
+	var channelId;
+	if (msg.channel.type === "dm") {
+		member = await client.guilds.cache.get(guildId).members.fetch(msg.author.id);
+		channelId = 0;
+	} else {
+		member = msg.member;
+		guildId = msg.guild.id;
+		channelId = msg.channel.id;
+	}
+	if (member.hasPermission('ADMINISTRATOR')) {
+		dmChannel = await msg.author.createDM();
+		con.query("SELECT * FROM statusChannelIDs", function (err, allStatusChannelIDs, fields) {
 			if (err) throw err;
-			statusChannelID = args[1].replace(/\D/g,'');
+			statusChannelID = listedChannelId;
 			var dbp;
-			db.forEach((dbps) => {
-				dbp = dbps;
+			var guildIdExistsInDB = false;
+			allStatusChannelIDs.forEach((statusChannelIDs) => {
+				if(statusChannelIDs.guildId == guildId) {
+					guildIdExistsInDB = true;
+				}
 			});
-				if(dbp.guildId === msg.guild.id) {
-					// var insertValues = `${statusChannelID}', '${msg.guild.id}', '${msg.member.user.id}', '${msg.channel.id}', '${msg.id}', ${msg.member.user.tag}`;
-					var sql = `UPDATE statusChannelIDs SET statusChannelID = ${statusChannelID}, guildId = ${msg.guild.id}, userId = ${msg.member.user.id}, channelId = ${msg.channel.id}, msgId = ${msg.id}, userName = "${msg.member.user.tag}" WHERE guildId = ${msg.guild.id}`;
+
+			// for (let i = 0; i < allStatusChannelIDs.length; i++) {
+			// 	if(allStatusChannelIDs[i].guildId !== null)
+			// }
+			console.log(guildIdExistsInDB);
+				if(guildIdExistsInDB) {
+					// var insertValues = `UPDATE statusChannelIDs SET statusChannelID = ${statusChannelID}, guildId = ${guildId}, userId = ${member.user.id}, channelId = ${channelId}, msgId = ${msg.id}, userName = "${member.user.tag}" WHERE guildId = ${guildId}`;
+					var sql = `UPDATE statusChannelIDs SET statusChannelID = ${statusChannelID}, guildId = ${guildId}, userId = ${member.user.id}, channelId = ${channelId}, msgId = ${msg.id}, userName = "${member.user.tag}" WHERE guildId = ${guildId}`;
 						con.query(sql, function (err, result) {
 						if (err) throw err;
 						logger.info("1 record updated");
-						msg.reply(`Status Channel updated to <#${statusChannelID}>`);
+						// msg.reply(`Status Channel updated to <#${statusChannelID}>`);
+						dmChannel.send(`Status Channel set to <#${statusChannelID}>`);
 					});
 				} else {
-					var insertValues = `${statusChannelID}', '${msg.guild.id}', '${msg.member.user.id}', '${msg.channel.id}', '${msg.id}', '${msg.member.user.tag}`;
+					var insertValues = `${statusChannelID}', '${guildId}', '${member.user.id}', '${channelId}', '${msg.id}', '${member.user.tag}`;
 					var sql = `INSERT INTO statusChannelIDs (statusChannelID, guildId, userId, channelId, msgId, userName) VALUES ('${insertValues}')`;
 						con.query(sql, function (err, result) {
 						if (err) throw err;
 						logger.info("1 record inserted");
-						msg.reply(`Status Channel Set to <#${statusChannelID}>`);
+						dmChannel.send(`Status Channel set to <#${statusChannelID}>`);
+						// msg.reply(`Status Channel Set to <#${statusChannelID}>`);
 					});
 				}
 		});
 	} else {
-		msg.reply(`You do not have admin rights.`);
+		dmChannel = await msg.author.createDM();
+		await dmChannel.send(`You do not have admin rights for this server.`);
 	}
 };
