@@ -25,6 +25,10 @@ You can also use `*examples` to see several examples of how to use the bot.
 
 🌟 All statuses can be posted in an overview, channel can be configured.
 
+🌟 Setup through DM
+
+🌟 Constant updates, follow the support server for updates
+
 
 ## 🔗 Links
 

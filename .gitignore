@@ -3,3 +3,4 @@ node_modules/
 botconfig.json
 database.db
 storages/guildConf.json
+storages/allguilds.json

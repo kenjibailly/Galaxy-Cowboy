@@ -50,12 +50,15 @@ client.on("ready", () => {
 	setInterval(finishTimedPollsExecute, 10000);
 	setInterval(autoremoveListedStatuses, 10000);
 	setInterval(showAllStatuses, 10000);
-	if (client.guilds.id === supportServerGuildId) {
-		setInterval(changeChannelGuildSize, 10000); // 15 mins timer 900000
-	}
+	// if (client.guilds.id === supportServerGuildId) { //client.guilds.id = undefined
+		setInterval(changeChannelGuildSize, 900000); // 15 mins timer 900000
+	// }
 	setInterval(() => logger.info("The bot is in " + client.guilds.size + " guild(s)"), 1800000); // logging info
 
-});
+	// let collectGuildNames = client.guilds.cache.map(guild => `${guild.id} - ${guild.name}`);
+	// fs.writeFile('./storages/allguilds.json', JSON.stringify(collectGuildNames, null, 2), (err) => {
+	// 	if (err) logger.error(err)
+   	// })
 
 //////////////////////////////////////
 // BOT ON SERVER JOINED
