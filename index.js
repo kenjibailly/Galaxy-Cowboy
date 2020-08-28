@@ -58,7 +58,8 @@ client.on("ready", () => {
 	// let collectGuildNames = client.guilds.cache.map(guild => `${guild.id} - ${guild.name}`);
 	// fs.writeFile('./storages/allguilds.json', JSON.stringify(collectGuildNames, null, 2), (err) => {
 	// 	if (err) logger.error(err)
-   	// })
+	   // })
+});
 
 //////////////////////////////////////
 // BOT ON SERVER JOINED

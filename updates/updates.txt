@@ -2,3 +2,8 @@
 $bump added
 
 *ping added
+
+Backup of RPI every day
+Backup of database every day
+Database backup is sent to second raspberry pi every day
+RPI backup is sent once every week to second raspberry pi
