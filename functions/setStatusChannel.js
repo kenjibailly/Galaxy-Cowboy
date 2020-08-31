@@ -6,6 +6,7 @@ var mysql = require('mysql');
 var con = mysql.createPool(config.CLEARDB_DATABASE_URL);
 const logger = require('../logger.js');
 const Status = require("../classes/status.js");
+const successEmbed = require('../embeds/successEmbed.js');
 module.exports.setStatusChannelExec = async function (client, msg, guildId, listedChannelId) {
 	// ToDo: check if user has admin permissions of specific guild 
 	var member;
@@ -33,24 +34,38 @@ module.exports.setStatusChannelExec = async function (client, msg, guildId, list
 			// for (let i = 0; i < allStatusChannelIDs.length; i++) {
 			// 	if(allStatusChannelIDs[i].guildId !== null)
 			// }
-			console.log(guildIdExistsInDB);
+
 				if(guildIdExistsInDB) {
+					let updateStatusChannelID = function(callback){
 					// var insertValues = `UPDATE statusChannelIDs SET statusChannelID = ${statusChannelID}, guildId = ${guildId}, userId = ${member.user.id}, channelId = ${channelId}, msgId = ${msg.id}, userName = "${member.user.tag}" WHERE guildId = ${guildId}`;
-					var sql = `UPDATE statusChannelIDs SET statusChannelID = ${statusChannelID}, guildId = ${guildId}, userId = ${member.user.id}, channelId = ${channelId}, msgId = ${msg.id}, userName = "${member.user.tag}" WHERE guildId = ${guildId}`;
-						con.query(sql, function (err, result) {
-						if (err) throw err;
-						logger.info("1 record updated");
-						// msg.reply(`Status Channel updated to <#${statusChannelID}>`);
-						dmChannel.send(`Status Channel set to <#${statusChannelID}>`);
+						var sql = `UPDATE statusChannelIDs SET statusChannelID = ${statusChannelID}, guildId = ${guildId}, userId = ${member.user.id}, channelId = ${channelId}, msgId = ${msg.id}, userName = "${member.user.tag}" WHERE guildId = ${guildId}`;
+							con.query(sql, function (err, result) {
+							if (err) throw err;
+							logger.info("1 record updated");
+							// msg.reply(`Status Channel updated to <#${statusChannelID}>`);
+							// dmChannel.send(`Status Channel set to <#${statusChannelID}>`);
+							callback(null, statusChannelID, guildId);
+						});
+					}
+					updateStatusChannelID(async function(err, result) {
+						var successEmbedSend = await successEmbed.successStatusChannelID(msg, guildId, statusChannelID);
+						await dmChannel.send({ embed: successEmbedSend });
 					});
 				} else {
-					var insertValues = `${statusChannelID}', '${guildId}', '${member.user.id}', '${channelId}', '${msg.id}', '${member.user.tag}`;
-					var sql = `INSERT INTO statusChannelIDs (statusChannelID, guildId, userId, channelId, msgId, userName) VALUES ('${insertValues}')`;
-						con.query(sql, function (err, result) {
-						if (err) throw err;
-						logger.info("1 record inserted");
-						dmChannel.send(`Status Channel set to <#${statusChannelID}>`);
-						// msg.reply(`Status Channel Set to <#${statusChannelID}>`);
+					let insertStatusChannelID = function (callback) {
+						var insertValues = `${statusChannelID}', '${guildId}', '${member.user.id}', '${channelId}', '${msg.id}', '${member.user.tag}`;
+						var sql = `INSERT INTO statusChannelIDs (statusChannelID, guildId, userId, channelId, msgId, userName) VALUES ('${insertValues}')`;
+							con.query(sql, function (err, result) {
+							if (err) throw err;
+							logger.info("1 record inserted");
+							// dmChannel.send(`Status Channel set to <#${statusChannelID}>`);
+							callback(null, statusChannelID, guildId);
+							// msg.reply(`Status Channel Set to <#${statusChannelID}>`);
+						});
+					}
+					insertStatusChannelID(async function(err, result) {
+						var successEmbedSend = await successEmbed.successStatusChannelID(msg, guildId, statusChannelID);
+						await dmChannel.send({ embed: successEmbedSend });
 					});
 				}
 		});

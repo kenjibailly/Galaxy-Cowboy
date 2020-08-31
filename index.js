@@ -31,6 +31,9 @@ const setStatusChannel = require('./functions/setStatusChannel.js');
 const checkClientGuilds = require('./functions/checkClientGuilds.js')
 const parseTime = require('./functions/parseTime.js');
 
+// embeds
+const errorEmbed = require('./embeds/errorEmbed.js');
+
 var supportServerGuildId = "734229467836186674";
 var inputid;
 var w;
@@ -152,19 +155,29 @@ client.on("message", async (msg) => {
 				msg.reply(`Prefix set to ${argsPrefix[0]}`);
 				return;
 				case "help":
+					var caught = false;
 					dmChannel = await msg.author.createDM();
-					await dmChannel.send({ embed: helpEmbed });
+					await dmChannel.send({ embed: helpEmbed })
+					.catch(() => {
+						 msg.reply("Please enable direct messages in order to proceed.");
+						 caught = true;
+					});
+					if(caught) return;
 					if(msg.channel.type === "dm") return;
 					msg.reply("I sent you a DM, go check it out!");
 					break;
 				case "setup":
 					useSetup(msg);
 					if(msg.channel.type === "dm") return;
-					msg.reply("I sent you a DM, go check it out!");
 					break;
 				case "examples":
 					dmChannel = await msg.author.createDM();
-					dmChannel.send({ embed: examplesEmbed });
+					await dmChannel.send({ embed: examplesEmbed })
+					.catch(() => {
+						msg.reply("Please enable direct messages in order to proceed.");
+						caught = true;
+					});
+					if(caught) return;
 					if(msg.channel.type === "dm") return;
 					msg.reply("I sent you a DM, go check it out!");
 					break;
@@ -173,7 +186,12 @@ client.on("message", async (msg) => {
 					break;
 				case "TOS":
 					dmChannel = await msg.author.createDM();
-					dmChannel.send({ embed: TOSembed });
+					await dmChannel.send({ embed: TOSembed })
+					.catch(() => {
+						msg.reply("Please enable direct messages in order to proceed.");
+						caught = true;
+					});
+					if(caught) return;
 					if(msg.channel.type === "dm") return;
 					msg.reply("I sent you a DM, go check it out!");
 					break;
@@ -197,7 +215,7 @@ client.on("message", async (msg) => {
 					if (!isDM) {
 						removestatus(msg, args);
 					}
-				break;							
+				break;
 				case "update":
 					if (!isDM) {
 						updateWeekly(msg, args);
@@ -211,7 +229,12 @@ client.on("message", async (msg) => {
 				case "invite":
 					if (config.link) {
 						dmChannel = await msg.author.createDM();
-						dmChannel.send({ embed: inviteEmbed });
+						await dmChannel.send({ embed: inviteEmbed })
+						.catch(() => {
+							msg.reply("Please enable direct messages in order to proceed.");
+							caught = true;
+						});
+						if(caught) return;
 						if(msg.channel.type === "dm") return;
 						msg.reply("I sent you a DM, go check it out!");
 					} else {
@@ -375,8 +398,8 @@ async function changeChannelGuildSize(){
 //////////////////////////////////////
 // REMOVE FINISHED STATUSES IN CHANNEL
 //////////////////////////////////////
-async function removeStatuses(s) {
-	removeStatus.removeStatusesExec(client, s);
+async function removeStatuses(s, msg) {
+	removeStatus.removeStatusesExec(client, s, msg);
 }
 //////////////////////////////////////
 // REMOVE STATUS COMMAND
@@ -483,6 +506,7 @@ async function weekly(msg, args) {
 //////////////////////////////////////
 async function end(msg, args) {
 	inputid = Number(args[1]);
+	var embed = await errorEmbed.cannotFindPoll(client, msg, "end");
 	con.query("SELECT * FROM polls WHERE id = '"+inputid+"'", function (err, dbp, fields) {
 		if (err) throw err;
 		  if(dbp.length !== 0){
@@ -527,7 +551,9 @@ async function end(msg, args) {
 						msg.reply("Cannot find the poll.");
 					}
 			}
-		 }
+		 }  else {
+			msg.channel.send({ embed: embed });
+		}
 		});
 }
 //////////////////////////////////////
@@ -536,6 +562,7 @@ async function end(msg, args) {
 async function updateWeekly(msg, args) {
 	let u = new Update(msg);
 	inputid = Number(args[1]);
+	var embed = await errorEmbed.cannotFindPoll(client, msg, "update");
 	con.query("SELECT * FROM polls WHERE id = '"+inputid+"'", function (err, dbp, fields) {
 		if (err) throw err;
 		if(dbp.length !== 0){
@@ -543,9 +570,9 @@ async function updateWeekly(msg, args) {
 			w.hasFinished = false;
 			if (w) {
 				u.start(msg, w);
-			} else {
-					msg.reply("Cannot find the poll.");
-			}
+			} 
+		}else {
+			msg.channel.send({ embed: embed });
 		}
 		});
 }

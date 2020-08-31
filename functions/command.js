@@ -1,6 +1,7 @@
 const fs = require("fs");
 const guildConf = require("../storages/guildConf.json");
 const logger = require("../logger");
+const successEmbed = require('../embeds/successEmbed.js');
 
 module.exports.changePrefix = async function(client, msg, newPrefix, guildId) {
         dmChannel = await msg.author.createDM();
@@ -20,5 +21,6 @@ module.exports.changePrefix = async function(client, msg, newPrefix, guildId) {
             if (err) logger.error(err)
         })
         logger.info(`Prefix ${newPrefix} changed of guild: ${guildId}`);
-        dmChannel.send(`Prefix changed to ${newPrefix}`);
+        var embed = await successEmbed.successPrefix(msg, newPrefix);
+        await dmChannel.send({embed: embed});
 }

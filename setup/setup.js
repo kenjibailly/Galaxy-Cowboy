@@ -36,16 +36,23 @@ module.exports.preSetup = async function (client, msg) {
     .setColor("#DDA0DD");
 
     dmChannel = await msg.author.createDM();
-    await dmChannel.send({ embed: preSetupEmbed });
+    await dmChannel.send({ embed: preSetupEmbed })
+    
     // client.on('message', (reaction) => {
     //     if (reaction.author.bot || reaction.author === client.user) return; // Checks if the Author is a Bot, or the Author is our Bot, stop.    
     //     var numCollected = reaction.content;
+    var embed = await errorEmbed.wrongGuildNumber(msg);
     msg.channel.awaitMessages(m => m.author.id == msg.author.id,
         {max: 1, time: 30000}).then(collected => {
         var content = collected.first().content.toLowerCase();
         if(!executionPreSetup) {
             let isnum = /^\d+$/.test(content);
             if(isnum) {
+                if(parseInt(content) > listedGuilds.length || parseInt(content) < 1) {
+                    dmChannel.send({ embed: embed });
+                    setTimeout(function(){setup.preSetup(client, msg);}, 2000);
+                    return;
+                }
                 setup.setupExec(client, msg, listedGuildIds[content-1], page);
                 executionPreSetup = true;
                 return;    
@@ -75,7 +82,7 @@ module.exports.setupExec = async function (client, msg, guildId, page) {
         .setTitle("⚙️ ┊ Galaxy Cowboy's Setup")
         .attachFiles(['assets/osalien.jpg'])
         .addField("‎\n<:command:748285373364306031> Configure Server Prefix", "Choose a prefix by replying with a message.\n‎")
-        .addField("<:status:747796552407449711> Configure Status Channel", "All active statuses will be posted to this channel and will serve as a status overview.\n‎")
+        .addField("<:status:734954957777928324> Configure Status Channel", "All active statuses will be posted to this channel and will serve as a status overview.\n‎")
         .addField("<:cancel:747828769548533831>	Cancel", "Go back to server list.\n‎")
         .addField("‎❔ How to use", "React with the corresponding emoji to proceed.\n‎")
         .setFooter("You have 30 seconds to reply. After 30 seconds use the command *setup again", 'attachment://osalien.jpg')
@@ -86,13 +93,20 @@ module.exports.setupExec = async function (client, msg, guildId, page) {
         .setTitle("⚙️ ┊ Galaxy Cowboy's Setup")
         .attachFiles(['assets/osalien.jpg'])
         .addField("‎\n<:command:748285373364306031> Configure Server Prefix", "Choose a prefix by replying with a message.\n‎")
-        .addField("<:status:747796552407449711> Configure Status Channel", "All active statuses will be posted to this channel and will serve as a status overview.\n‎")
+        .addField("<:status:734954957777928324> Configure Status Channel", "All active statuses will be posted to this channel and will serve as a status overview.\n‎")
         .addField("‎❔ How to use", "React with the corresponding emoji to proceed.\n‎")
         .setFooter("You have 30 seconds to reply. After 30 seconds use the command *setup to restart.", 'attachment://osalien.jpg')
         .setColor("#DDA0DD");
     }
     dmChannel = await msg.author.createDM();
-    const setupMessage = await dmChannel.send({ embed: setupEmbed });
+    var caught = false;
+    const setupMessage = await dmChannel.send({ embed: setupEmbed })
+    .catch(() => {
+        msg.reply("Please enable direct messages in order to proceed.");
+        caught = true;
+    });
+    if(caught) return;
+    if(msg.channel.type !== "dm") msg.reply("I sent you a DM, go check it out!");
     for (let i = 0; i < emojis.length; i++) {
         await setupMessage.react(emojis[i]);        
     }

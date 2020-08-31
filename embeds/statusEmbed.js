@@ -1,5 +1,5 @@
 const Discord = require("discord.js");
-const parseTime = require('../functions/parseTime.js');
+const getPrefix = require('../functions/getPrefix.js');
 
 module.exports.getStatusEmbed = async function(description, isTimed, finishTime) {
     var footer = "Thank you for your notice"
@@ -9,7 +9,7 @@ module.exports.getStatusEmbed = async function(description, isTimed, finishTime)
     let statusEmbed = new Discord.MessageEmbed()
         .attachFiles(['assets/osalien.jpg'])
         .setTitle(`<:status:734954957777928324> ┊ Status Enabler`)
-        .setDescription(description)
+        .setDescription(`${description}`)
         .setColor("#d596ff")
         .setFooter(footer, "attachment://osalien.jpg");
         return new Promise (resolve => {
@@ -30,4 +30,18 @@ function convertDateFormat(date) {
     zaTm = za.toTimeString().substr(0,5);
     var convertedDateFormat = `${zaDs}.${zaMth}.${zaR}`;
     return convertedDateFormat;
+}
+
+
+module.exports.statusRemoved = async function(client, msg, guildId) {
+    var prefix = getPrefix.getPrefixPerGuild(msg, guildId);
+    let statusEmbed = new Discord.MessageEmbed()
+        .attachFiles(['assets/osalien.jpg'])
+        .setTitle(`<:status:734954957777928324> ┊ Status Enabler`)
+        .setDescription("‎\nStatus sucessfully removed.\n‎")
+        .setColor("#00ff00")
+        .setFooter(`Check out ${prefix}help or ${prefix}examples for more.`, "attachment://osalien.jpg");
+        return new Promise (resolve => {
+            resolve(statusEmbed);
+        });
 }

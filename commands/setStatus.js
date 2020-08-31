@@ -4,7 +4,7 @@ const mysql = require('mysql');
 var con = mysql.createPool(config.CLEARDB_DATABASE_URL);
 const Status = require('../classes/status.js');
 const parseTime = require('../functions/parseTime.js');
-const logger = require('../logger.js')
+const logger = require('../logger.js');
 
 var status;
 var argsSpliced;

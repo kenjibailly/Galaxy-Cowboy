@@ -42,7 +42,7 @@ module.exports.statusChannelSetup = async function(client, msg, guildId, setupMe
 	.setTitle("⚙️ ┊ Galaxy Cowboy's Setup")
 	.attachFiles(['./assets/zep.jpg'])
     .setDescription(`‎\n${listedTextChannels}`)
-	.addField("‎\n<:status:747796552407449711> Configure Status Channel", "Choose a channel by replying with the corresponding number.\n‎")
+	.addField("‎\n<:status:734954957777928324> Configure Status Channel", "Choose a channel by replying with the corresponding number.\n‎")
 	.addField("<:cancel:747828769548533831>	Cancel", "Go back to Setup page.\n‎")
 	.setFooter("Thanks for using Galaxy Cowboy, enjoy!", 'attachment://zep.jpg')
     .setColor("#DDA0DD");
