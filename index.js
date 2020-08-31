@@ -48,6 +48,7 @@ process.on('uncaughtException', error => logger.error(error.stack));
 //////////////////////////////////////
 client.on("ready", () => {
 	logger.info(`Bot logged in as ${client.user.tag}!`);
+	logger.info("Bot is in "+client.guilds.cache.size.toString()+" servers");
 	richPresence.activity(client);
 	setInterval(finishTimedPollsExecute, 10000);
 	setInterval(autoremoveListedStatuses, 10000);
