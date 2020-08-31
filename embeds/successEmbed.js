@@ -5,7 +5,7 @@ const guildConf = require('../storages/guildConf.json');
 module.exports.successPrefix = async function(msg, prefix) {
     let successPrefix = new Discord.MessageEmbed()
 		.attachFiles(['assets/osalien.jpg'])
-		.setTitle(`✅ ┊ Prefix successfully updated`)
+		.setTitle(`<:check:747872692102758457> ┊ Prefix successfully updated`)
         .addField(`‎\nSucces!`, `prefix changed to \`\`\`${prefix}\`\`\`\n‎`)
 		.setColor("#00ff00")
         .setFooter(`Check out ${prefix}help or ${prefix}examples for more.`, 'attachment://osalien.jpg');
@@ -18,7 +18,7 @@ module.exports.successStatusChannelID = async function(msg, guildId, statusChann
     var prefix = getPrefix.getPrefixPerGuild(msg, guildId);
     let successPrefix = new Discord.MessageEmbed()
 		.attachFiles(['assets/osalien.jpg'])
-		.setTitle(`✅ ┊ Status Channel successfully updated`)
+		.setTitle(`<:check:747872692102758457> ┊ Status Channel successfully updated`)
         .addField(`‎\nSucces!`, `channel set to <#${statusChannelID}>\n‎`)
 		.setColor("#00ff00")
         .setFooter(`Check out ${prefix}help or ${prefix}examples for more.`, 'attachment://osalien.jpg');
