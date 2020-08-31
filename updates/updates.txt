@@ -4,9 +4,12 @@ $-bump added
 ob!bump added
 py!bump added
 
+*status command rewritten to prevent bugs
+
 *ping added
 Setup permissions changed to Manage Server
 Validation for *status
+
 
 Backup of RPI every day
 Backup of database every day
@@ -14,8 +17,9 @@ Database backup is sent to second raspberry pi every day
 RPI backup is sent once every week to second raspberry pi
 Custom Prefixes are backed up every day to second raspberry pi
 
-New logo added
+New logo created
 
 
 
 //TODO: Validation on *setstatus "" => get rid of the quotes?
+What if bot doesn't have permissions to send in custom status channel? Check if permissions or loop.
