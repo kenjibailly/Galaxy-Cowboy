@@ -1,9 +1,21 @@
 .bump added
 $bump added
+$-bump added
+ob!bump added
+py!bump added
 
 *ping added
+Setup permissions changed to Manage Server
+Validation for *status
 
 Backup of RPI every day
 Backup of database every day
 Database backup is sent to second raspberry pi every day
 RPI backup is sent once every week to second raspberry pi
+Custom Prefixes are backed up every day to second raspberry pi
+
+New logo added
+
+
+
+//TODO: Validation on *setstatus "" => get rid of the quotes?

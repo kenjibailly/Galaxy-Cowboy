@@ -1,18 +1,18 @@
+// Config
+const config = require("./botconfig.json");
 // Libraries
 const Discord = require("discord.js");
 const winston = require('winston');
 const logger = require('./logger.js');
 const mysql = require('mysql');
+var con = mysql.createPool(config.CLEARDB_DATABASE_URL);
 const fs = require("fs");
-// Config
-const config = require("./botconfig.json");
-// var config = require('./storages/config.json'); // Config File
 var guildConf = require('./storages/guildConf.json');
 // Classes
 const Poll = require("./poll.js");
 const Weekly = require("./weekly.js");
 const Update = require("./update.js");
-const Status = require("./status.js");
+const Status = require("./classes/status.js");
 // Commands
 const helpEmbed = require('./help.js');
 const examplesEmbed = require('./examples.js');
@@ -20,6 +20,8 @@ const donateEmbed = require('./donate.js');
 const TOSembed = require('./TOS.js');
 const inviteEmbed = require('./invite.js');
 const setup = require('./setup/setup.js');
+const setStatus = require('./commands/setStatus.js');
+// const statusCommand = require('./commands/statusCommand.js');
 // Functions
 const finishTimedPolls = require('./functions/finishTimedPolls.js');
 const richPresence = require('./functions/richPresence.js');
@@ -27,8 +29,8 @@ const removeStatus = require('./functions/removeStatuses.js');
 const showAllStatus = require('./functions/showAllStatuses.js');
 const setStatusChannel = require('./functions/setStatusChannel.js');
 const checkClientGuilds = require('./functions/checkClientGuilds.js')
+const parseTime = require('./functions/parseTime.js');
 
-var con = mysql.createPool(config.CLEARDB_DATABASE_URL);
 var supportServerGuildId = "734229467836186674";
 var inputid;
 var w;
@@ -127,7 +129,6 @@ client.on("message", async (msg) => {
 	// if(words.includes(args[0])) {
 		// if (commandSyntaxRegex.test(command)) {
 
-
 		let isDM = false, dmChannel;
 		switch (command) {
 			case "ping":
@@ -152,13 +153,19 @@ client.on("message", async (msg) => {
 				case "help":
 					dmChannel = await msg.author.createDM();
 					await dmChannel.send({ embed: helpEmbed });
+					if(msg.channel.type === "dm") return;
+					msg.reply("I sent you a DM, go check it out!");
 					break;
 				case "setup":
 					useSetup(msg);
+					if(msg.channel.type === "dm") return;
+					msg.reply("I sent you a DM, go check it out!");
 					break;
 				case "examples":
 					dmChannel = await msg.author.createDM();
 					dmChannel.send({ embed: examplesEmbed });
+					if(msg.channel.type === "dm") return;
+					msg.reply("I sent you a DM, go check it out!");
 					break;
 				case "donate":
 					msg.reply({ embed: donateEmbed});
@@ -166,6 +173,8 @@ client.on("message", async (msg) => {
 				case "TOS":
 					dmChannel = await msg.author.createDM();
 					dmChannel.send({ embed: TOSembed });
+					if(msg.channel.type === "dm") return;
+					msg.reply("I sent you a DM, go check it out!");
 					break;
 				case "weekly":
 					if (!isDM) {
@@ -174,12 +183,13 @@ client.on("message", async (msg) => {
 				break;
 				case "status":
 					if (!isDM) {
-						status(msg, args);
+						// status(msg, args);
+						Status.statusExec(client, msg, args);
 					}
 				break;
 				case "setstatus":
 					if (!isDM) {
-						setstatus(msg, args);
+						setStatus.setStatusExec(msg, args);
 					}
 				break;	
 				case "removestatus":
@@ -201,6 +211,8 @@ client.on("message", async (msg) => {
 					if (config.link) {
 						dmChannel = await msg.author.createDM();
 						dmChannel.send({ embed: inviteEmbed });
+						if(msg.channel.type === "dm") return;
+						msg.reply("I sent you a DM, go check it out!");
 					} else {
 						msg.reply("The link is not available in this moment.");
 					}
@@ -381,7 +393,7 @@ async function poll(msg, args) {
 	var question = args[1];
 	let answers = [];
 	let type;
-	let timeToVote = parseTime(msg, args);
+	let timeToVote = parseTime.parseTimeExec(msg, args);
 	switch (args.length) {
 		case 0:
 			msg.reply("You cannot create a poll with no question");
@@ -452,7 +464,7 @@ async function weekly(msg, args) {
 	} 
 	let answers = [];
 	let type = "weekly";
-	let timeToVote = parseTime(msg, args);
+	let timeToVote = parseTime.parseTimeExec(msg, args);
 	const w = new Weekly(msg, question, startDate, endDate, weeklyDescription, weeklyType, answers, timeToVote, type);
 	await w.start(msg);
 	if (w.hasFinished == false) {
@@ -465,85 +477,6 @@ async function weekly(msg, args) {
 			});
 	}
 }
-//////////////////////////////////////
-// SET STATUS
-//////////////////////////////////////
-async function setstatus(msg, args) {
-	var status;
-	var argsSpliced;
-	typeSet = "set";
-	if (args[1].includes("time")) {
-		argsSpliced = args.slice(2,args.length);
-			status = args[2];
-	} else {
-		argsSpliced = args.slice(1,args.length);
-		status = args[1]
-	}
-	let type = "Vacation";
-	let timeToVote = parseTime(msg, args);
-	con.query(`SELECT * FROM statuses WHERE userId = '${msg.member.user.id}' AND guildId = '${msg.guild.id}'`, function (err, dbp, fields) {
-		if (err) throw err;
-		if(dbp.length < 1){
-			const s = new Status(msg, status, timeToVote, type, typeSet);
-			s.start(msg);
-			if (s.hasFinished == false) {
-				var insertValues = s.userId+"', '"+s.guildId+"', '"+s.channelId+"', '"+s.msgId+"', '"+s.status+"', '"+s.createdOn+"', '"+s.isTimed+"', '"+s.hasFinished+"', '"+s.finishTime.getTime()+"', '"+s.type+"', '"+s.displayed;
-				var sql = "INSERT INTO statuses (userId, guildId, channelId, msgId, status, createdOn, isTimed, hasFinished, finishTime, type, displayed) VALUES ('"+insertValues+"')";
-				con.query(sql, function (err, result) {
-				if (err) throw err;
-				logger.info("1 record inserted");
-				});
-			}
-		} else {
-			msg.reply("You already have a status set. Remove your status first.");
-		}
-	});
-}
-
-//////////////////////////////////////
-// LOOKUP STATUS
-//////////////////////////////////////
-async function status(msg, args) {
-	var status;
-	var argsSpliced;
-	typeSet = "lookup";
-	if (args[1].includes("time")) {
-		argsSpliced = args.slice(2,args.length);
-			status = args[2];
-	} else {
-		argsSpliced = args.slice(1,args.length);
-		status = args[1]
-	}
-	var inputUserId = args[1].split('<@!').join('').split('>').join('');
-		con.query("SELECT * FROM statuses WHERE userId = '"+inputUserId+"'", function (err, dbp, fields) {
-			if (err) throw err;
-			if(dbp.length !== 0){
-					s = Status.copyConstructor(dbp[0]);
-					s.hasFinished = false;
-					if (s) {
-						s.display(client, msg);
-						} else {
-							msg.reply("Cannot find the user.");
-						}
-				} else {
-					notFound(msg);
-				}
-		  logger.info("1 record searched");
-		});
-}
-   async function notFound(msg) {
-        message = await msg.channel.send({ embed: generateEmbedLookupNotFound() })
-	}
-	function generateEmbedLookupNotFound(msg) {
-        let footer = `Thank you for your notice`;
-        if (this.isTimed) footer += ` | This status ends on ${new Date(this.finishTime).toUTCString()}`;
-		let embed = new Discord.RichEmbed()
-			.setTitle(`<:status:734954957777928324> ┊ Status Enabler`)
-			.setDescription(`<:offnight:734894950260670475> This user has no status enabled`)
-			.setColor("#d596ff")
-			.setFooter(footer, "https://cdn1.vectorstock.com/i/1000x1000/57/80/ufo-neon-sign-design-template-aliens-neon-vector-26235780.jpg");
-		return embed;
-	}
 //////////////////////////////////////
 // END POLL WITH ID
 //////////////////////////////////////
@@ -614,40 +547,6 @@ async function updateWeekly(msg, args) {
 			}
 		}
 		});
-}
-function parseTime(msg, args) {
-	let time = 0;
-	if (args[1].startsWith("time=")) {
-		const timeRegex = /\d+/;
-		const unitRegex = /s|m|h|d/i;
-		let timeString = args[1];
-		let unit = "s";
-		let match;
-		match = timeString.match(timeRegex);
-		if (match != null) {
-			time = parseInt(match.shift());
-		} else {
-			msg.reply("Wrong time syntax!");
-			return;
-		}
-		match = timeString.split("=").pop().match(unitRegex);
-		if (match != null) unit = match.shift();
-		switch (unit) {
-			case "s": time *= 1000;
-				break;
-			case "m": time *= 60000;
-				break;
-			case "h": time *= 3600000;
-				break;
-			case "d": time *= 86400000;
-				break;
-			default: time *= 60000;
-		}
-	} else {
-		time = "";
-	}
-	// if (time > 604800000) return 604800000;
-	return time;
 }
 //////////////////////////////////////
 // ARGS ARE DEFINED PER COMMAND

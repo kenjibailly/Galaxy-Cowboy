@@ -6,6 +6,7 @@ const logger = require('../logger.js');
 var page;
 var execution = false;
 var executionPreSetup = false;
+const errorEmbed = require('../embeds/errorEmbed.js');
 
 module.exports.preSetup = async function (client, msg) {
     executionPreSetup = false;
@@ -77,7 +78,7 @@ module.exports.setupExec = async function (client, msg, guildId, page) {
         .addField("<:status:747796552407449711> Configure Status Channel", "All active statuses will be posted to this channel and will serve as a status overview.\n‎")
         .addField("<:cancel:747828769548533831>	Cancel", "Go back to server list.\n‎")
         .addField("‎❔ How to use", "React with the corresponding emoji to proceed.\n‎")
-        .setFooter("Thanks for using Galaxy Cowboy, enjoy!", 'attachment://osalien.jpg')
+        .setFooter("You have 30 seconds to reply. After 30 seconds use the command *setup again", 'attachment://osalien.jpg')
         .setColor("#DDA0DD");
     } else {
         var emojis = [":command:748285373364306031", ":status:734954957777928324"];
@@ -87,7 +88,7 @@ module.exports.setupExec = async function (client, msg, guildId, page) {
         .addField("‎\n<:command:748285373364306031> Configure Server Prefix", "Choose a prefix by replying with a message.\n‎")
         .addField("<:status:747796552407449711> Configure Status Channel", "All active statuses will be posted to this channel and will serve as a status overview.\n‎")
         .addField("‎❔ How to use", "React with the corresponding emoji to proceed.\n‎")
-        .setFooter("Thanks for using Galaxy Cowboy, enjoy!", 'attachment://osalien.jpg')
+        .setFooter("You have 30 seconds to reply. After 30 seconds use the command *setup to restart.", 'attachment://osalien.jpg')
         .setColor("#DDA0DD");
     }
     dmChannel = await msg.author.createDM();
@@ -95,18 +96,41 @@ module.exports.setupExec = async function (client, msg, guildId, page) {
     for (let i = 0; i < emojis.length; i++) {
         await setupMessage.react(emojis[i]);        
     }
+
+    var member;
+    var channelId;
+
+    if (msg.channel.type === "dm") {
+        member = await client.guilds.cache.get(guildId).members.fetch(msg.author.id);
+        channelId = 0;
+    } else {
+        member = msg.member;
+        guildId = msg.guild.id;
+        channelId = msg.channel.id;
+    }
        
-    var noCatch = false;
+    var noCatch = true;
+    let errorMsg = await errorEmbed.errorPermissions(client, msg, guildId);
     setupMessage.awaitReactions((reaction, user) => user.id == msg.author.id && (reaction.emoji.name == "status" || reaction.emoji.name == "command" || reaction.emoji.name == "cancel"),
     { max: 1, time: 30000 }).then(collected => {
             switch (collected.first().emoji.name) {
                 case "status":
-                    setupStatusChannel.statusChannelSetup(client, msg, guildId, setupMessage);
-                    noCatch = true;
+                    if (member.hasPermission('MANAGE_GUILD')) { // Check if user has manage server rights
+                        setupStatusChannel.statusChannelSetup(client, msg, guildId, setupMessage);
+                        noCatch = true;
+                    } else {
+                        dmChannel.send({ embed: errorMsg });
+                        setTimeout(function(){setup.setupExec(client, msg, guildId);}, 2000);
+                    }
                     return;
                 case "command":
-                    noCatch = true;
-                    setupCommand.setupCommandExec(client, msg, guildId, setupMessage);
+                    if (member.hasPermission('MANAGE_GUILD')) { // Check if user has manage server rights
+                        noCatch = true;
+                        setupCommand.setupCommandExec(client, msg, guildId, setupMessage);
+                    } else {
+                        dmChannel.send({ embed: errorMsg });
+                        setTimeout(function(){setup.setupExec(client, msg, guildId);}, 2000);
+                    }
                 return;
                 case "cancel":
                     if(msg.channel.type === "dm") {

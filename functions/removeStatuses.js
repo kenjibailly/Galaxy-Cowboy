@@ -6,7 +6,7 @@ var mysql = require('mysql');
 var con = mysql.createPool(config.CLEARDB_DATABASE_URL);
 const logger = require('../logger.js');
 const removeStatus = require('./removeStatuses.js');
-const Status = require("../status.js");
+const Status = require("../classes/status.js");
 module.exports.removeStatusesExec = function (client, s) {
 	con.query(`SELECT * FROM statusChannelIDs WHERE guildId = ${s.guildId} `, function (err, dbp) {
 		if (err) throw err;

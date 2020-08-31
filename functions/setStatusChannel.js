@@ -5,7 +5,7 @@ const config = require("../botconfig.json");
 var mysql = require('mysql');
 var con = mysql.createPool(config.CLEARDB_DATABASE_URL);
 const logger = require('../logger.js');
-const Status = require("../status.js");
+const Status = require("../classes/status.js");
 module.exports.setStatusChannelExec = async function (client, msg, guildId, listedChannelId) {
 	// ToDo: check if user has admin permissions of specific guild 
 	var member;
@@ -18,7 +18,6 @@ module.exports.setStatusChannelExec = async function (client, msg, guildId, list
 		guildId = msg.guild.id;
 		channelId = msg.channel.id;
 	}
-	if (member.hasPermission('ADMINISTRATOR')) {
 		dmChannel = await msg.author.createDM();
 		con.query("SELECT * FROM statusChannelIDs", function (err, allStatusChannelIDs, fields) {
 			if (err) throw err;
@@ -55,8 +54,4 @@ module.exports.setStatusChannelExec = async function (client, msg, guildId, list
 					});
 				}
 		});
-	} else {
-		dmChannel = await msg.author.createDM();
-		await dmChannel.send(`You do not have admin rights for this server.`);
-	}
 };
