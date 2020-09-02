@@ -3,7 +3,9 @@ const Discord = require("discord.js");
 const config = require("../botconfig.json");
 const logger = require("../logger");
 const setup = require("./setup.js");
+const setupStatusChannel = require("./setupStatusChannel.js");
 const setStatusChannel = require('../functions/setStatusChannel.js');
+const errorEmbed = require('../embeds/errorEmbed.js');
 var page;
 var execution = false;
 
@@ -74,15 +76,28 @@ module.exports.statusChannelSetup = async function(client, msg, guildId, setupMe
     //     if (reaction.author.bot || reaction.author === client.user) return; // Checks if the Author is a Bot, or the Author is our Bot, stop.    
     //     if(reaction.channel.type !== "dm") return;
     //     var content = reaction.content;
+    var embed = await errorEmbed.wrongGuildNumber(msg);
     setupMessage.channel.awaitMessages(m => m.author.id == msg.author.id,
         {max: 1, time: 30000}).then(collected => {
         var content = collected.first().content.toLowerCase();
         if(content === `${config.prefix}setup`) { page = ""; return; }
         content = parseInt(content);
         if(page !== "setupStatusChannel") return;
-        setStatusChannel.setStatusChannelExec(client, msg, guildId, listedChannelIds[content-1]);
-        execution = true;
-        return;
+        let isnum = /^\d+$/.test(content);
+            if(isnum) {
+                if(parseInt(content) > listedChannelIds.length || parseInt(content) < 1) {
+                    dmChannel.send({ embed: embed });
+                    setTimeout(function(){setupStatusChannel.statusChannelSetup(client, msg, guildId, setupMessage);}, 2000);
+                    return;
+                }
+                setStatusChannel.setStatusChannelExec(client, msg, guildId, listedChannelIds[content-1]);
+                execution = true;
+                return;
+            } else {
+                dmChannel.send({ embed: embed });
+                setTimeout(function(){setupStatusChannel.statusChannelSetup(client, msg, guildId, setupMessage);}, 2000);
+            }
+
     })
     .catch((error) => {
         if(error) {

@@ -111,12 +111,13 @@ client.on("message", async (msg) => {
 	var argsPrefix = msg.content.split(' ').slice(1); // We need this later
 	if(msg.channel.type === "dm") {
 		var prefix = config.prefix;
+		if(msg.content[0] !== prefix) return;
 		command = msg.content.split(' ')[0].replace(config.prefix, ''); // Replaces the Current Prefix with this
 	} else {
 		command = msg.content.split(' ')[0].replace(guildConf[msg.guild.id].prefix, ''); // Replaces the Current Prefix with this
 		var prefix = guildConf[msg.guild.id].prefix;
+		if(msg.content[0] !== prefix) return;
 		args = parseToArgs(msg);
-
 		if (args[0].includes('@')) {
 			args[0] = args[0].split(' ').join('');
 		} else {

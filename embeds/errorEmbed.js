@@ -95,3 +95,17 @@ module.exports.wrongGuildNumber = async function(msg) {
         resolve(wrongGuildNumber);
     });
 }
+
+module.exports.commandSetError = async function(msg, guildId) {
+    var prefix = getPrefix.getPrefixPerGuild(msg, guildId);
+    let commandSetError = new Discord.MessageEmbed()
+    .attachFiles(['assets/osalien.jpg'])
+    .setTitle(`❌ ┊ Wrong prefix`)
+    .addField(`‎\nWrong input`, `Only 1 character is allowed\n‎`)
+    .addField(`‎\nPlease try again.`, `<@${msg.author.id}> You will be brought back to the prefix setup.\n‎`)
+    .setColor("#CC0000")
+    .setFooter(`Check out ${config.prefix}help or ${config.prefix}examples for more.`, 'attachment://osalien.jpg');
+    return new Promise (resolve => {
+        resolve(commandSetError);
+    });
+}

@@ -56,6 +56,9 @@ module.exports.preSetup = async function (client, msg) {
                 setup.setupExec(client, msg, listedGuildIds[content-1], page);
                 executionPreSetup = true;
                 return;    
+            } else {
+                dmChannel.send({ embed: embed });
+                setTimeout(function(){setup.preSetup(client, msg);}, 2000);
             }
         }
     })

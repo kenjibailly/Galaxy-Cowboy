@@ -2,8 +2,10 @@ const Discord = require("discord.js");
 const config = require("../botconfig.json");
 const logger = require("../logger");
 const setup = require("./setup.js");
+const setupCommand = require("./setupCommand.js");
 const collector = require("../functions/collector.js");
 const command = require("../functions/command.js");
+const errorEmbed = require("../embeds/errorEmbed.js");
 var page;
 const fs = require("fs");
 var execution = false;
@@ -48,18 +50,21 @@ module.exports.setupCommandExec = async function(client, msg, guildId) {
     //     if (reaction.author.bot || reaction.author === client.user) return; // Checks if the Author is a Bot, or the Author is our Bot, stop.
     //     if(reaction.channel.type !== "dm") return;
     //     var content = reaction.content;
+    var embed = await errorEmbed.commandSetError(msg, guildId);
     dmChannel.awaitMessages(m => m.author.id == msg.author.id,
         {max: 1, time: 30000}).then(collected => {
         var content = collected.first().content.toLowerCase();
         if(content === `${config.prefix}setup`) { page = ""; return; }
         if(execution) return;
         if(page !== "setupCommand") return;
-        if(content.length < 3) {
+        if(content.length < 2) {
             command.changePrefix(client, msg, content, guildId);
             execution = true;
             return;
         } else {
-            reaction.reply("A maximum of 2 charachters is allowed.");
+            dmChannel.send({ embed: embed });
+            setTimeout(function(){setupCommand.setupCommandExec(client, msg, guildId);}, 2000);
+            return;
         }
     })
     .catch((error) => {
