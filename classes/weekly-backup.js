@@ -1,17 +1,16 @@
 const Discord = require("discord.js");
 const hash = require("string-hash");
 //const config = process.env;
-const config = require("./botconfig.json");
-const logger = require('./logger.js');
-const guildConf = require('./storages/guildConf.json');
-const errorEmbed = require('./embeds/errorEmbed.js');
-const numEmojis = ["1⃣", "2⃣", "3⃣", "4⃣", "5⃣", "6⃣", "7⃣", "8⃣", "9⃣", "🔟"];
+const logger = require('../logger.js');
+const guildConf = require('../storages/guildConf.json');
+const errorEmbed = require('../embeds/errorEmbed.js');
+const successEmbed = require('../embeds/successEmbed.js');
+const convertDateFormat = require('../functions/convertDateFormat.js');
 var reactEmoji = ["734158773739847800", "734158773740109876", "734158773777727600", "734158773794504765", "734158773874196614", "734158773731459134", "734158773811413112"];
 var dayEmoji = ["<:Sunday:734158773739847800>", "<:Monday:734158773740109876>", "<:Tuesday:734158773777727600>", "<:Wednesday:734158773794504765>", "<:Thursday:734158773874196614>", "<:Friday:734158773731459134>", "<:Saturday:734158773811413112>"];
 var reactCountEmoji = ["Sunday:734158773739847800", "Monday:734158773740109876", "Tuesday:734158773777727600", "Wednesday:734158773794504765", "Thursday:734158773874196614", "Friday:734158773731459134", "Saturday:734158773811413112"];
 var days = ["Sunday", "Monday", "Tuesday", "Wednesday", "Thursday", "Friday", "Saturday"];
 var months = ["January", "February", "March", "April", "May", "June", "July", "August", "September", "October", "November", "December"];
-const handEmojis = ["1⃣", "2⃣", "3⃣", "4⃣", "5⃣", "6⃣", "7⃣"];
 let dateDayCollection = [];
 let dateCollection = [];
 let dateEmojiCollection = [];
@@ -25,25 +24,26 @@ var dateFormatOne;
 var positionStart;
 var dateDayRange;
 var prefix;
+
 class Weekly {
-	constructor(msg, question, startDate, endDate, weeklyDescription, weeklyType, answers, time, type) {
+	constructor(msg, guildId, channelId, title, startDate, endDate, weeklyDescription, weeklyType, answers, timeToVote, type) {
 		if (msg) { 
-			this.guildId = msg.guild.id;
-			this.userId = msg.member.user.id;
-			this.channelId = msg.channel.id;
+			this.guildId = guildId;
+			this.channelId = channelId;
+			this.userId = msg.author.id;
 			this.msgId = null;
-			this.question = question;
+			this.title = title;
 			this.startDate = startDate;
 			this.endDate = endDate;
 			this.weeklyDescription = weeklyDescription;
 			this.weeklyType = weeklyType;
 			this.answers = answers;
 			this.createdOn = Date.now();
-			this.isTimed = (time != 0);
+			this.isTimed = (timeToVote != 0);
 			this.hasFinished = false;
-			this.finishTime = new Date(this.createdOn + time).getTime();
+			this.finishTime = new Date(this.createdOn + timeToVote).getTime();
 			this.type = type;
-			this.emojis = this.getEmojis(type);
+			this.emojis = this.getEmojis();
 			this.results = [];
 			this.id = this.generateId();
 		}
@@ -51,10 +51,11 @@ class Weekly {
 	static copyConstructor (other) {
 		let w = new Weekly();
 		w.guildId = other.guildId;
+		w.channelId = other.channelId;
 		w.userId = other.userId;
 		w.channelId = other.channelId;
 		w.msgId = other.msgId;
-		w.question = other.question;
+		w.title = other.question;
 		w.startDate = other.startDate;
 		w.endDate = other.endDate;
 		w.weeklyDescription = other.weeklyDescription;
@@ -70,8 +71,9 @@ class Weekly {
 		w.id = other.id;
 		return w;
 	}
-	async start(msg) {
-		prefix = guildConf[msg.guild.id].prefix;
+	async start(client, msg, guildId) {
+		let channelToPostEmbed = client.channels.cache.get(`${this.channelId}`);
+		prefix = guildConf[guildId].prefix;
 		position = 0;
 		dateDayCollection = [];
 		dateCollection = [];
@@ -80,38 +82,32 @@ class Weekly {
 		dateTextLines = [];
 		reactCountEmojiCollection = [];
 		let date1;
-		if (this.startDate == 0 || this.startDate.length === 0 || this.startDate == null) {
+		if (this.startDate === "0" || this.startDate.length === 0 || this.startDate == null) {
 			date1 = new Date();
-			this.startDate = convertDateFormat(this.incrementDate(date1,0));
+			this.startDate = convertDateFormat.convertDateFormat(this.incrementDate(date1,0));
 		} else {
-			date1 = new Date(this.startDate);
+			let dotsToDateFormat = convertDateFormat.convertDotsToDateFormat(this.startDate);
+			date1 = new Date(dotsToDateFormat);
 		}
-		function convertDateFormat(date) {
-			var Xmas95 = new Date(date);
-			var weekday = Xmas95.getDay();
-			var options = { weekday: 'long'};
-			var dayDate = new Intl.DateTimeFormat('en-US', options).format(Xmas95);
-			var newDate = new Date(date);
-			let za = new Date(newDate),
-    		zaR = za.getFullYear(),
-    		zaMth = za.getMonth() + 1,
-    		zaDs = za.getDate(),
-    		zaTm = za.toTimeString().substr(0,5);
-			var convertedDateFormat = `${zaR}-${zaMth}-${zaDs}`;
-			return convertedDateFormat;
-		}
-		if (this.endDate == 0) {
-			this.endDate = convertDateFormat(this.incrementDate(this.startDate,7));
+		if (this.endDate === "0") {
+			let startDateParsed = convertDateFormat.convertDotsToDateFormat(this.startDate);
+			this.endDate = convertDateFormat.convertDateFormat(this.incrementDate(startDateParsed,7));
 		}
 		let date2 = new Date(this.endDate);
 		let dateTimeRange = date2.getTime() - date1.getTime();
 		var date1BiggerThanDate2 = date1 > date2;
+
+		let weeklyPosted = await successEmbed.weeklyPosted(this.userId, this.channelId);
+		let dmChannel = await msg.author.createDM();
+		await dmChannel.send({embed: weeklyPosted});
+
+
 		if(date1BiggerThanDate2) {
 			var embed = await errorEmbed.secondDateLowerThanFirst(msg);
-			await msg.channel.send({ embed: embed });
+			await channelToPostEmbed.send({ embed: embed });
 			return;
 		}
-		const message = await msg.channel.send({ embed: this.generateEmbed() })
+		const message = await channelToPostEmbed.send({ embed: this.generateEmbed() })
 		this.msgId = message.id;
 		let dateDayRange = dateTimeRange / (1000 * 3600 * 24)
 		dateDayRange = Math.floor(dateDayRange = dateDayRange + 1);
@@ -156,7 +152,7 @@ class Weekly {
 		this.hasFinished = true;
 		const embed = new Discord.MessageEmbed(message.embeds[0]);
 		embed.setColor("FF0800")
-			.setAuthor(`${this.question} [FINISHED]`)
+			.setAuthor(`${this.title} [FINISHED]`)
 			.setFooter(`Weekly ${this.id} finished ${now.toUTCString()}`);
 		try {
 			await message.edit({ embed: embed });
@@ -190,11 +186,11 @@ class Weekly {
 		}
 		return await channel.send({ embed: this.generateWeeklyResultsEmbed() });
 	}
-	generateEmbed(msg) {
+	generateEmbed() {
 		let footer = `React with the emojis below | ID: ${this.id}`;
 		if (this.isTimed) footer += ` | This poll ends on ${new Date(this.finishTime).toUTCString()}`;
 		current_datetime = this.getCurrentDateTime();
-		dateFormatOne = this.convertDayDate(current_datetime);
+		dateFormatOne = convertDateFormat.convertDayDate(current_datetime);
 		positionStart = this.getPositionStart(current_datetime, dateFormatOne);
 		position = positionStart -1;
 		dateDayRange = this.getDateDayRange();
@@ -206,7 +202,7 @@ class Weekly {
 				}
 				if (positionStart < days.length ) {
 					dateDayCollection.push(days[position]);
-					dateCollection.push(this.convertDateFormat(this.incrementDate(current_datetime,i)));
+					dateCollection.push(this.convertDateFormat.convertDateFormat(this.incrementDate(current_datetime,i)));
 					dateEmojiCollection.push(dayEmoji[position]);
 					dateEmojiReactCollection.push(String(reactEmoji[position]));
 				} else {
@@ -216,67 +212,27 @@ class Weekly {
 		let dateTextLine = dateTextLines.join('');
 		let embed = new Discord.MessageEmbed()
 			.setAuthor("Weekly Scheduler", "https://cdn1.vectorstock.com/i/1000x1000/57/80/ufo-neon-sign-design-template-aliens-neon-vector-26235780.jpg", "https://img.freepik.com/free-vector/alien-outer-space-neon-sign_104045-467.jpg?size=338&ext=jpg")
-			.setTitle(`❓ ${this.question} ❓`)
+			.setTitle(`❓ ${this.title} ❓`)
 			.addField(`Make your own poll!`, `Check out \`${prefix}help\` and \`${prefix}examples\``)
 			.setDescription(`${this.weeklyDescription}` + "\n\n"+ dateTextLine)
 			.setColor("#d596ff")
 			.setFooter(footer);
 		return embed;
 	}
-	convertDateFormatBack(date) {
-        var Xmas95 = new Date(date);
-        var weekday = Xmas95.getDay();
-        var options = { weekday: 'long'};
-        var dayDate = new Intl.DateTimeFormat('en-US', options).format(Xmas95);
-        var newDate = new Date(date);
-        let za = new Date(newDate),
-        zaR = za.getFullYear(),
-        zaMth = za.getMonth() + 1,
-        zaDs = za.getDate(),
-        zaTm = za.toTimeString().substr(0,5);
-        var convertedDateFormat = `${zaR}-${zaMth}-${zaDs}`;
-        return convertedDateFormat;
-    }
+
     incrementDate(dateInput,increment) {
         var dateFormatTotime = new Date(dateInput);
         var increasedDate = new Date(dateFormatTotime.getTime() +(increment *86400000));
         return increasedDate;
     }
-    convertDayDate(date) {
-        var Xmas95 = new Date(date);
-        var weekday = Xmas95.getDay();
-        var options = { weekday: 'long'};
-		var dayDate = new Intl.DateTimeFormat('en-US', options).format(Xmas95);
-        var newDate = new Date(date);
-        let za = new Date(newDate),
-        zaR = za.getUTCFullYear(),
-        zaMth = months[za.getUTCMonth()],
-        zaDs = za.getUTCDate(),
-        zaTm = za.toTimeString().substr(0,5);
-        var convertedDateFormat = zaMth + " " + zaDs + ", " + zaR + " " + zaTm;
-        return dayDate;
-    }
-    convertDateFormat(date) {
-        var Xmas95 = new Date(date);
-        var weekday = Xmas95.getDay();
-        var options = { weekday: 'long'};
-        var dayDate = new Intl.DateTimeFormat('en-US', options).format(Xmas95);
-        var newDate = new Date(date);
-        let za = new Date(newDate),
-        zaR = za.getFullYear(),
-        zaMth = za.getMonth() + 1,
-        zaDs = za.getDate(),
-        zaTm = za.toTimeString().substr(0,5);
-		var convertedDateFormat = `${zaDs}.${zaMth}.${zaR}`;
-        return convertedDateFormat;
-	}
+
 	getCurrentDateTime() {
 		let dateTime;
 		if (this.startDate !== undefined) {
-			dateTime = this.startDate;
+			dateTime = convertDateFormat.convertDotsToDateFormat(this.startDate);
 		} else {
 			dateTime = new Date();
-			this.startDate = this.convertDateFormatBack(dateTime);
+			dateTime = convertDateFormat.convertDateFormatBack(dateTime);
 		}
 		return dateTime;
 	}
@@ -313,8 +269,16 @@ class Weekly {
 		return positionStart;
 	}
 	getDateDayRange() {
-		let date1 = new Date(this.startDate);
-		let date2 = new Date(this.endDate);
+		logger.info("this.startDate: "+this.startDate);
+		let startDate = convertDateFormat.convertDotsToDateFormat(this.startDate);
+		let endDate;
+		if(this.endDate !== "0"){
+			endDate = convertDateFormat.convertDotsToDateFormat(this.endDate);
+		}
+		logger.info("startDate, endDate: "+[startDate, endDate]);
+		let date1 = new Date(startDate);
+		let date2 = new Date(endDate);
+		logger.info("date1, date2: "+[date1, date2]);
 		let dateTimeRange = date2.getTime() - date1.getTime();
 		let dateDayRange = dateTimeRange / (1000 * 3600 * 24);
 		dateDayRange = Math.floor(dateDayRange);
@@ -360,7 +324,7 @@ class Weekly {
 		});
 		let footer = `Results from poll ${this.id} finished on ${new Date().toUTCString()}`;
 		let weeklyResultsEmbed = new Discord.MessageEmbed()
-			.setAuthor("Results of: " + this.question)
+			.setAuthor("Results of: " + this.title)
 			.setDescription(description)
 			.setFooter(footer)
 			.setColor("#0080FF");
@@ -377,12 +341,12 @@ class Weekly {
 			id += d.getUTCHours();
 			id += d.getUTCMinutes();
 			id += d.getUTCMilliseconds();
-			id += this.question;
+			id += this.title;
 		}
 		this.id = hash(id);
 		return this.id;
 	}
-	async getEmojis(type) {
+	async getEmojis() {
 		reactCountEmojiCollection = this.getReactCountEmojiCollection();
 		reactCountEmojiCollection = reactCountEmojiCollection[0];
 		var stringCountEmojiCollection = reactCountEmojiCollection.toString();
@@ -392,28 +356,15 @@ class Weekly {
 		reactEmojiCollection = [];
 		reactCountEmojiCollection = [];
 		let date1 = new Date();
-		if (this.startDate == 0 || this.startDate.length === 0 || this.startDate == null) {
-			this.startDate = convertDateFormat(this.incrementDate(date1,0));
+		if (this.startDate === "0" || this.startDate.length === 0 || this.startDate == null) {
+			this.startDate = convertDateFormat.convertDateFormat(this.incrementDate(date1,0));
 		}
-		if (this.endDate == 0) {
-			this.endDate = convertDateFormat(this.incrementDate(this.startDate,7));
-		}
-		function convertDateFormat(date) {
-			var Xmas95 = new Date(date);
-			var weekday = Xmas95.getDay();
-			var options = { weekday: 'long'};
-			var dayDate = new Intl.DateTimeFormat('en-US', options).format(Xmas95);
-			var newDate = new Date(date);
-			let za = new Date(newDate),
-    		zaR = za.getFullYear(),
-    		zaMth = za.getMonth() + 1,
-    		zaDs = za.getDate(),
-    		zaTm = za.toTimeString().substr(0,5);
-			var convertedDateFormat = `${zaR}-${zaMth}-${zaDs}`;
-			return convertedDateFormat;
+		if (this.endDate === "0") {
+			let startDateParsed = convertDateFormat.convertDotsToDateFormat(this.startDate);
+			this.endDate = convertDateFormat.convertDateFormat(this.incrementDate(startDateParsed,7));
 		}
 		current_datetime = this.getCurrentDateTime();
-		dateFormatOne = this.convertDayDate(current_datetime);
+		dateFormatOne = convertDateFormat.convertDayDate(current_datetime);
 		positionStart = this.getPositionStart(current_datetime, dateFormatOne);
 		position = positionStart -1;
 		dateDayRange = this.getDateDayRange();

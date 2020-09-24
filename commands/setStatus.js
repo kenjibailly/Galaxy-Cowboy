@@ -1,10 +1,8 @@
-const Discord = require("discord.js");
-const config = require('../botconfig.json');
-const mysql = require('mysql');
-var con = mysql.createPool(config.CLEARDB_DATABASE_URL);
+const mongoose = require('mongoose');
 const Status = require('../classes/status.js');
 const parseTime = require('../functions/parseTime.js');
 const logger = require('../logger.js');
+const statusSchema = require('../database/models/status.js');
 
 var status;
 var argsSpliced;
@@ -24,22 +22,37 @@ module.exports.setStatusExec = async function(msg, args) {
         }
     } 
     let type = "Vacation";
-    con.query(`SELECT * FROM statuses WHERE userId = '${msg.member.user.id}' AND guildId = '${msg.guild.id}'`, function (err, dbp, fields) {
-        if (err) throw err;
-        if(dbp.length < 1){
-            const s = new Status(msg, status, timeToVote, type, typeSet);
-            s.start(msg);
-            if (s.hasFinished == false) {
-                var insertValues = s.userId+"', '"+s.guildId+"', '"+s.channelId+"', '"+s.msgId+"', '"+s.status+"', '"+s.createdOn+"', '"+s.isTimed+"', '"+s.hasFinished+"', '"+s.finishTime.getTime()+"', '"+s.type+"', '"+s.displayed;
-                var sql = "INSERT INTO statuses (userId, guildId, channelId, msgId, status, createdOn, isTimed, hasFinished, finishTime, type, displayed) VALUES ('"+insertValues+"')";
-                con.query(sql, function (err, result) {
-                if (err) throw err;
-                logger.info("1 record inserted");
-                });
-            }
-        } else {
-            msg.reply("You already have a status set. Remove your status first.");
-        }
-    });
 
+    var filter = {
+        userId: `${msg.member.user.id}`,
+        guildId: `${msg.guild.id}`
+    };
+    var statusOfUser;
+    await statusSchema.find(filter)
+    .then(result => {
+        statusOfUser = result;
+    })
+    .catch(err => logger.error(JSON.stringify(err)));
+    var id = mongoose.Types.ObjectId();
+    if(statusOfUser.length < 1){
+        const s = new Status(id, msg, status, timeToVote, type, typeSet);
+        s.start(msg, s);
+        const insertStatus = new statusSchema({
+            _id: id,
+            userId: `${s.userId}`,
+            guildId: `${s.guildId}`,
+            channelId: `${s.channelId}`,
+            msgId: `${s.msgId}`,
+            status: `${s.status}`,
+            createdOn: `${s.createdOn}`,
+            isTimed: `${s.isTimed}`,
+            hasFinished: `${s.hasFinished}`,
+            finishTime: `${s.finishTime.getTime()}`,
+            type: `${s.type}`,
+            displayed: `${s.displayed}`
+        });
+        await insertStatus.save();
+    } else {
+        msg.reply("You already have a status set. Remove your status first.");
+    }
 }

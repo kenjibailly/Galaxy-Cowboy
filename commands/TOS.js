@@ -1,5 +1,5 @@
 const Discord = require("discord.js");
-const config = require("./botconfig.json");
+const config = require("../conf/botconfig.json");
 let TOSembed = new Discord.MessageEmbed()
 		.attachFiles(['assets/zep.jpg'])
 		.setTitle(`📜 ┊ Galaxy Cowboy Privacy Policy`)

@@ -1,6 +1,6 @@
 const Discord = require("discord.js");
 const hash = require("string-hash");
-const logger = require('./logger.js');
+const logger = require('../logger.js');
 const numEmojis = ["734470639481782346", "734470639733178450", "734470639817064469", "734470639607480374", "734470639879979151", "734470639980904538", "734470639976579112", "734470639574057082", "734470639586640055", "734471585284620348"];
 const numEmojisReactions = ["1one:734470639481782346", "2two:734470639733178450", "3three:734470639817064469", "4four:734470639607480374", "5five:734470639879979151", "6six:734470639980904538", "7seven:734470639976579112", "8eight:734470639574057082", "9nine:734470639586640055", "10ten:734471585284620348"];
 const handEmojis = ["thumbs_up:734374828957630493", "thumbs_down:734374828739395584"];
@@ -148,10 +148,10 @@ class Poll {
 		let finalResults = [];
 		for (let i = 0; i < this.results.length; i++) {
 			let percentage = (this.results[i] / totalVotes * 100);
-			var reactionEmojis = this.reactionEmojis.split(",");
+			// var reactionEmojis = this.reactionEmojis.split(",");
 			result = {
 				emoji: this.emojis[i],
-				reactionEmoji: reactionEmojis[i],
+				reactionEmoji: this.reactionEmojis[i],
 				answer: this.answers[i],
 				votes: this.results[i],
 				percentage: percentage.toFixed(2)
@@ -220,7 +220,6 @@ class Poll {
 			case "default":
 				numEmojiCollection = [];
 				 if (this.isTimed) {
-					 //this.answers.splice(this.answers.length-1,this.answers.length);
 					 for (let i = 0; i < this.answers.length-1 && i < 10; ++i) {
 						numEmojiCollection.push(numEmojis[i]);
 						this.reactionEmojis = numEmojiCountCollection.push(numEmojisReactions[i]);

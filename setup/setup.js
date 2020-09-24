@@ -3,13 +3,14 @@ const setup = require("./setup.js");
 const setupCommand = require("../setup/setupCommand.js");
 const setupStatusChannel = require("./setupStatusChannel.js");
 const logger = require('../logger.js');
+const successEmbed = require('../embeds/successEmbed.js');
 var page;
-var execution = false;
 var executionPreSetup = false;
 const errorEmbed = require('../embeds/errorEmbed.js');
 
 module.exports.preSetup = async function (client, msg) {
     executionPreSetup = false;
+    var checkForInteraction = true;
     page = "preSetup";
     var listedGuildIds = [];
     var listedGuilds = [];
@@ -36,14 +37,18 @@ module.exports.preSetup = async function (client, msg) {
     .setColor("#DDA0DD");
 
     dmChannel = await msg.author.createDM();
-    await dmChannel.send({ embed: preSetupEmbed })
+    let preSetupMessage = await dmChannel.send({ embed: preSetupEmbed })
     
+    var emoji = "stop:756207604358971453";
+    await preSetupMessage.react(emoji);
+
     // client.on('message', (reaction) => {
     //     if (reaction.author.bot || reaction.author === client.user) return; // Checks if the Author is a Bot, or the Author is our Bot, stop.    
     //     var numCollected = reaction.content;
     var embed = await errorEmbed.wrongGuildNumber(msg);
-    msg.channel.awaitMessages(m => m.author.id == msg.author.id,
-        {max: 1, time: 30000}).then(collected => {
+    msg.channel.awaitMessages(m => m.author.id == msg.author.id, {max: 1, time: 30000})
+    .then(collected => {
+        if(!checkForInteraction) return;
         var content = collected.first().content.toLowerCase();
         if(!executionPreSetup) {
             let isnum = /^\d+$/.test(content);
@@ -67,6 +72,20 @@ module.exports.preSetup = async function (client, msg) {
             logger.error(error);
         }
     });
+
+
+    preSetupMessage.awaitReactions((reaction, user) => user.id == msg.author.id && (reaction.emoji.name == "stop"), { max: 1, time: 60000 })
+    .then(reactionEmojiSent => {
+        if(!checkForInteraction) return;
+        let emojiContent = reactionEmojiSent.first().emoji.name;
+        if(emojiContent === 'stop') {
+            checkForInteraction = false;
+            return;
+        }
+    })
+    .catch(err => {
+        logger.error("Error happened while fetching reactions in setup.js");
+    });
 }
 
 module.exports.setupExec = async function (client, msg, guildId, page) {
@@ -75,12 +94,10 @@ module.exports.setupExec = async function (client, msg, guildId, page) {
     } else {
         page = "setup";
     }
-    // page = "setup";
-    execution = false;
 
     var setupEmbed;
     if(page === "preSetup") {
-        var emojis = [":command:748285373364306031", ":status:734954957777928324", "cancel:747828769548533831"];
+        var emojis = [":command:748285373364306031", ":status:734954957777928324", "cancel:747828769548533831", "stop:756207604358971453"];
         setupEmbed = new Discord.MessageEmbed()
         .setTitle("⚙️ ┊ Galaxy Cowboy's Setup")
         .attachFiles(['assets/osalien.jpg'])
@@ -109,7 +126,10 @@ module.exports.setupExec = async function (client, msg, guildId, page) {
         caught = true;
     });
     if(caught) return;
-    if(msg.channel.type !== "dm") msg.reply("I sent you a DM, go check it out!");
+    if(msg.channel.type !== "dm") {
+        embed = await successEmbed.dmSent(msg, msg.guild.id);
+        await msg.channel.send({embed: embed});
+        }
     for (let i = 0; i < emojis.length; i++) {
         await setupMessage.react(emojis[i]);        
     }
@@ -128,7 +148,7 @@ module.exports.setupExec = async function (client, msg, guildId, page) {
        
     var noCatch = true;
     let errorMsg = await errorEmbed.errorPermissions(client, msg, guildId);
-    setupMessage.awaitReactions((reaction, user) => user.id == msg.author.id && (reaction.emoji.name == "status" || reaction.emoji.name == "command" || reaction.emoji.name == "cancel"),
+    setupMessage.awaitReactions((reaction, user) => user.id == msg.author.id && (reaction.emoji.name == "status" || reaction.emoji.name == "command" || reaction.emoji.name == "cancel" || reaction.emoji.name == "stop"),
     { max: 1, time: 30000 }).then(collected => {
             switch (collected.first().emoji.name) {
                 case "status":
@@ -155,6 +175,9 @@ module.exports.setupExec = async function (client, msg, guildId, page) {
                     } else {
                         setup.setupExec(client, msg, guildId);
                     }
+                    return;
+                case 'stop':
+                    checkForInteraction = false;
                     return;
                 default:
                     dmChannel.send('Wrong emoji reaction.');

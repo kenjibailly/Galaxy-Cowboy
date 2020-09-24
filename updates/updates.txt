@@ -1,5 +1,6 @@
-
-
-
-//TODO: Validation on *setstatus "" => get rid of the quotes?
-What if bot doesn't have permissions to send in custom status channel? Check if permissions or loop.
+Website:
+Beautified the urls
+Updated pictures
+Added 'Show All" on commands page
+Automatically redirect if url is invalid
+Second domain added: galaxycowboy.xyz

@@ -1,5 +1,5 @@
 const Discord = require("discord.js");
-const config = require("./botconfig.json");
+const config = require("../conf/botconfig.json");
 let inviteEmbed = new Discord.MessageEmbed()
 		.attachFiles(['assets/osalien.jpg'])
 		.setTitle(`✉️ ┊ Galaxy Cowboy: Invite this bot to your server`)

@@ -4,8 +4,9 @@
   "description": "A discord bot that create interactive polls",
   "main": "index.js",
   "scripts": {
-    "test": "echo \"Error: no test specified\" && exit 1",
-    "start": "worker: node index.js"
+    "start": "node index.js",
+    "start.dev": "nodemon index.js",
+    "test": "echo \"Error: no test specified\" && exit 1"
   },
   "repository": {
     "type": "git",
@@ -16,10 +17,15 @@
   "license": "ISC",
   "dependencies": {
     "dateformat": "^3.0.3",
-    "discord.js": "file:node_modules/discord.js-12.3.1",
+    "discord.js": "12.3.1",
+    "express": "^4.17.1",
+    "mongoose": "^5.10.3",
     "mysql": "^2.18.1",
     "nedb": "^1.8.0",
     "string-hash": "^1.1.3",
     "winston": "^3.3.3"
+  },
+  "devDependencies": {
+    "nodemon": "^2.0.4"
   }
 }

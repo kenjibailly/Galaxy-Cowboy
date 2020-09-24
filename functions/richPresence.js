@@ -1,7 +1,7 @@
 //////////////////////////////////////
 // Rich Presence
 //////////////////////////////////////
-const config = require("../botconfig.json");
+const config = require("../conf/botconfig.json");
 var delay = 0;
 var speed = 10000;
 const activity = (client) => {
@@ -14,7 +14,7 @@ const activity = (client) => {
 		}
 		switch (delay) {
 			case 0:
-				discordActivityStatus = "kb-galaxy-cowboy.ga";
+				discordActivityStatus = "kenjibailly.xyz";
 				discordActivityType = "WATCHING";
 				break;	
 			case 1:

@@ -33,15 +33,28 @@ function convertDateFormat(date) {
 }
 
 
-module.exports.statusRemoved = async function(client, msg, guildId) {
+module.exports.statusRemoved = async function(msg, guildId) {
     var prefix = getPrefix.getPrefixPerGuild(msg, guildId);
-    let statusEmbed = new Discord.MessageEmbed()
+    let statusRemoved = new Discord.MessageEmbed()
         .attachFiles(['assets/osalien.jpg'])
         .setTitle(`<:status:734954957777928324> ┊ Status Enabler`)
         .setDescription("‎\nStatus sucessfully removed.\n‎")
         .setColor("#00ff00")
         .setFooter(`Check out ${prefix}help or ${prefix}examples for more.`, "attachment://osalien.jpg");
         return new Promise (resolve => {
-            resolve(statusEmbed);
+            resolve(statusRemoved);
+        });
+}
+
+module.exports.statusRemovedDM = async function(guildName, status) {
+    let statusRemovedDM = new Discord.MessageEmbed()
+        .attachFiles(['assets/osalien.jpg'])
+        .setTitle(`<:status:734954957777928324> ┊ Status Enabler`)
+        .setDescription(`‎\nYour status in ${guildName} has timed out and sucessfully been removed.`)
+        .addField(`Your status was set to ‎\n`, `${status}\n‎`)
+        .setColor("#00ff00")
+        .setFooter(`Till next time!`, "attachment://osalien.jpg");
+        return new Promise (resolve => {
+            resolve(statusRemovedDM);
         });
 }

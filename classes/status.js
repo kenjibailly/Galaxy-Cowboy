@@ -1,14 +1,13 @@
-const config = require("../botconfig.json");
 const logger = require('../logger.js');
 const statusEmbed = require('../embeds/statusEmbed.js');
 const errorEmbed = require('../embeds/errorEmbed.js');
 var months = ["January", "February", "March", "April", "May", "June", "July", "August", "September", "October", "November", "December"];
-var mysql = require('mysql');
-var con = mysql.createPool(config.CLEARDB_DATABASE_URL);
+const StatusSchema = require('../database/models/status.js');
 var message;
 class Status {
-	constructor(msg, status, time, type, typeSet) {
+	constructor(id, msg, status, time, type, typeSet) {
 		if (msg) { // if the constructor have parameters
+			this.id = id;
 			this.guildId = msg.guild.id;
 			this.userId = msg.member.user.id;
 			this.channelId = msg.channel.id;
@@ -40,21 +39,32 @@ class Status {
 		s.typeSet = other.typeSet;
 		s.displayed = other.displayed;
 		s.msgIdFinished = other.msgIdFinished;
+		s.channelIdDisplayed = other.channelIdDisplayed;
+		s.msgIdDisplayed = other.msgIdDisplayed;
 		return s;
 	}
     async display(client, msg) {
 		let embed = await this.generateEmbedLookup();
 		message = await msg.channel.send({ embed: embed })
 	}
-	async start(msg) {
+	async start(msg, s) {
             if (this.typeSet == "set") {
 				let description = `You have successfully added status:\n<:onday:734894950826639410> ${this.status}`;
-				let embed = await statusEmbed.getStatusEmbed(description, this.isTimed, this.finishTime);
-                message = await msg.channel.send({ embed: embed });
+				let setStatusEmbed = await statusEmbed.getStatusEmbed(description, this.isTimed, this.finishTime);
+				message = await msg.channel.send({ embed: setStatusEmbed })
+				.then(async function (sent) {
+					let id = sent.id;
+					var update = {
+						msgId: `${id}`
+					}
+					StatusSchema.findByIdAndUpdate(s.id, update)
+					.then(result => logger.info("UpdateEmbedId"+JSON.stringify(result)))
+					.catch(err => logger.error(JSON.stringify(err)));
+				})
 			} 
 			else if (this.type == "lookup") {
 				let embed = await this.generateEmbedLookup();
-                message = await msg.channel.send({ embed: embed });
+				message = await msg.channel.send({ embed: embed })
 			} 
 	}
 
@@ -122,21 +132,21 @@ module.exports.statusExec = async function(client, msg, args) {
 			return;
 		}
 	}
-		con.query("SELECT * FROM statuses WHERE userId = '"+inputUserId+"'", function (err, dbp) {
-			if (err) throw err;
-			if(dbp.length !== 0){
-					s = Status.copyConstructor(dbp[0]);
-					s.hasFinished = false;
-					if (s) {
-						s.display(client, msg);
-						} else {
-							msg.reply("Cannot find the user.");
-						}
-				} else {
-					notFound(msg);
-				}
-		  logger.info("1 record searched");
-		});
+	StatusSchema.findOne({userId: `${inputUserId}`})
+	.then(async function(statusOfUser){
+		if(statusOfUser) {
+			s = Status.copyConstructor(statusOfUser);
+			s.hasFinished = false;
+			if (s) {
+				s.display(client, msg);
+			}
+		} else {
+			notFound(msg);
+		}
+		
+	})
+	.catch(err => console.log(err));
+
    async function notFound(msg) {
 		let embed = await generateEmbedLookupNotFound();
     	message = await msg.channel.send({ embed: embed });

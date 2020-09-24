@@ -1,6 +1,9 @@
 package-lock.json
+package.json
 node_modules/
-botconfig.json
-database.db
+conf/botconfig.json
 storages/guildConf.json
 storages/allguilds.json
+log
+LICENSE
+

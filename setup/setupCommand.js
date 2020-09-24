@@ -1,16 +1,15 @@
 const Discord = require("discord.js");
-const config = require("../botconfig.json");
+const config = require("../conf/botconfig.json");
 const logger = require("../logger");
 const setup = require("./setup.js");
 const setupCommand = require("./setupCommand.js");
-const collector = require("../functions/collector.js");
 const command = require("../functions/command.js");
 const errorEmbed = require("../embeds/errorEmbed.js");
 var page;
-const fs = require("fs");
 var execution = false;
 
 module.exports.setupCommandExec = async function(client, msg, guildId) {
+    var checkForInteraction = true;
     execution = false;
     page = "setupCommand";
     const setupCommandEmbed = new Discord.MessageEmbed()
@@ -26,23 +25,31 @@ module.exports.setupCommandExec = async function(client, msg, guildId) {
 
     
 
-    var emojis = ["cancel:747828769548533831"];
-    for (let i = 0; i < emojis.length; i++) {
-        await commandSetupMessage.react(emojis[i]);        
-    }
+    var emojis = ["cancel:747828769548533831", "stop:756207604358971453"];
 
-    commandSetupMessage.awaitReactions((reaction, user) => user.id == msg.author.id && (reaction.emoji.name == "cancel"),
+    emojis.forEach(async function(emoji) {
+        await commandSetupMessage.react(emoji);
+    });
+
+    commandSetupMessage.awaitReactions((reaction, user) => user.id == msg.author.id && (reaction.emoji.name == "cancel" || reaction.emoji.name == "stop"),
     { max: 1, time: 30000 }).then(collected => {
-        if(collected.first().emoji.name === "cancel") {
-            setup.setupExec(client, msg, guildId);
-            page = "setup";
-            return;
+        if(!checkForInteraction) return;
+        let emojiSent = collected.first().emoji.name;
+        switch (emojiSent) {
+            case 'cancel':
+                setup.setupExec(client, msg, guildId);
+                page = "setup";
+                checkForInteraction = false;
+                return;
+            case 'stop':
+                checkForInteraction = false;
+                return;
+            default:
+                break;
         }
     })
     .catch((error) => {
-        if(error) {
-            logger.error(error);
-        }
+        // for debug
     });
 
     noCatch = false;
@@ -53,6 +60,7 @@ module.exports.setupCommandExec = async function(client, msg, guildId) {
     var embed = await errorEmbed.commandSetError(msg, guildId);
     dmChannel.awaitMessages(m => m.author.id == msg.author.id,
         {max: 1, time: 30000}).then(collected => {
+        if(!checkForInteraction) return;
         var content = collected.first().content.toLowerCase();
         if(content === `${config.prefix}setup`) { page = ""; return; }
         if(execution) return;
@@ -60,16 +68,16 @@ module.exports.setupCommandExec = async function(client, msg, guildId) {
         if(content.length < 2) {
             command.changePrefix(client, msg, content, guildId);
             execution = true;
+            checkForInteraction = false;
             return;
         } else {
             dmChannel.send({ embed: embed });
             setTimeout(function(){setupCommand.setupCommandExec(client, msg, guildId);}, 2000);
+            checkForInteraction = false;
             return;
         }
     })
     .catch((error) => {
-        if(error) {
-            logger.error(error);
-        }
+        // for debug
     });
 }
